@@ -2,14 +2,29 @@ package main
 
 import (
 	"bufio"
-	_ "database/sql"
+	"database/sql"
 	"encoding/binary"
 	"fmt"
+	_ "github.com/mattn/go-sqlite3"
 	"io"
+	"log"
 	"os"
 	"time"
-	// _ "github.com/mattn/go-sqlite3"
 )
+
+var db *sql.DB
+var err error
+
+func init() {
+	os.Remove("./smf.db")
+
+	db, err := sql.Open("sqlite3", "./smf.db")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+	smfInit()
+}
 
 func main() {
 	file, err := os.Open("smftest.rdw")
@@ -52,7 +67,7 @@ func main() {
 		if recseg == 0 || recseg == 512 {
 			recnum := int(record[1])
 			matrix[recnum] += 1
-			// smfparse(record)
+			smfParse(record)
 			count++
 			offset = 0
 		}
