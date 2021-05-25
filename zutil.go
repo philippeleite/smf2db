@@ -2,44 +2,46 @@ package main
 
 import (
 	"encoding/binary"
-	"fmt"
+	"time"
 )
 
-func smfdate(sdate []byte) string {
-	var month_days = []int{31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31}
-	day_of_year := int((sdate[3] >> 4) +
+func smfdate(sdate []byte) time.Time {
+	var monthDays = []int{31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31}
+	dayOfYear := int((sdate[3] >> 4) +
 		((sdate[2] & 0x0f) * 10) +
 		((sdate[2] >> 4) * 100))
 	century := int(sdate[0]*100) + 1900
 	year := century + int((sdate[1]>>4)*10+(sdate[1]&0x0f))
-	leap := ((year&3) == 0 && ((year%25) != 0 || (year&15) == 0))
-	day_of_month := day_of_year
+	leap := (year&3) == 0 && ((year%25) != 0 || (year&15) == 0)
+	dayOfMonth := dayOfYear
 	month := 0
-	for ; month < 12; month++ {
-		mlen := month_days[month]
+	for ; month < len(monthDays); month++ {
+		mlen := monthDays[month]
 		if leap && month == 1 {
 			mlen++
 		}
-		if day_of_month <= mlen {
+		if dayOfMonth <= mlen {
 			break
 		}
-		day_of_month -= mlen
+		dayOfMonth -= mlen
 	}
-	return fmt.Sprintf("%04d-%02d-%02d", year, month+1, day_of_month)
+	//return fmt.Sprintf("%04d-%02d-%02d", year, month+1, dayOfMonth)
+	return time.Date(year, time.Month(month+1), dayOfMonth, 0, 0, 0, 0, time.Local)
 }
 
-func divmod(numerator, denominator uint32) (quotient, remainder uint32) {
+func divmod(numerator, denominator int) (quotient, remainder int) {
 	quotient = numerator / denominator // integer division, decimals are truncated
 	remainder = numerator % denominator
 	return
 }
 
-func smftime(stime []byte) string {
+func smftime(stime []byte) time.Time {
 	ttime := binary.BigEndian.Uint32(stime)
-	dv1quot, dv1rem := divmod(ttime, 360000)
-	dv2quot, dv2rem := divmod(dv1rem, 6000)
+	dv1quot, dv1rem := divmod(int(ttime), 360_000)
+	dv2quot, dv2rem := divmod(dv1rem, 6_000)
 	dv3quot, dv3rem := divmod(dv2rem, 100)
-	return fmt.Sprintf("%02d:%02d:%02d.%03d", dv1quot, dv2quot, dv3quot, dv3rem*10)
+	//return fmt.Sprintf("%02d:%02d:%02d.%03d", dv1quot, dv2quot, dv3quot, dv3rem*10)
+	return time.Date(0, 0, 0, dv1quot, dv2quot, dv3quot, dv3rem*10_000_000, time.Local)
 }
 
 func bcd2asc(str []byte, len int) {

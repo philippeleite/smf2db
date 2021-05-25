@@ -9,5 +9,5 @@ func smfInit() {
 }
 
 func smfParse(rec []byte) {
-	parseTable[int(rec[3])](rec)
+	parseTable[int(rec[1])](rec)
 }

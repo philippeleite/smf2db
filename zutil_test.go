@@ -3,12 +3,17 @@ package main
 import (
 	"bytes"
 	"testing"
+	"time"
 )
 
 func TestSmfTime(t *testing.T) {
 	var ttime = []byte{0x00, 0x5d, 0x77, 0x40}
 	stime := smftime(ttime)
-	if stime != "17:00:53.760" {
+	dtime := time.Date(0, 0, 0, 17, 00, 53, 76*10_000_000, time.Local)
+	//if stime != "17:00:53.760" {
+	//	t.Errorf("Time error")
+	//}
+	if stime != dtime {
 		t.Errorf("Time error")
 	}
 }
@@ -16,7 +21,11 @@ func TestSmfTime(t *testing.T) {
 func TestSmfDate(t *testing.T) {
 	var tdate = []byte{0x01, 0x16, 0x06, 0x0f}
 	sdate := smfdate(tdate)
-	if sdate != "2016-02-29" {
+	ddate := time.Date(2016, 02, 29, 0, 0, 0, 0, time.Local)
+	//if sdate != "2016-02-29" {
+	//	t.Errorf("Date error")
+	//}
+	if sdate != ddate {
 		t.Errorf("Date error")
 	}
 }
