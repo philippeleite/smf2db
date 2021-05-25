@@ -93,31 +93,32 @@ func smf004Parse(rec []byte) {
 	if err != nil {
 		log.Printf("%q: %s\n", err, sqlStmt)
 	}
-	bcd2asc(rec[14:18], 4)
-	bcd2asc(rec[18:26], 8)
-	bcd2asc(rec[34:42], 8)
-	bcd2asc(rec[58:66], 8)
-	bcd2asc(rec[66:74], 8)
+	defer prepStmt.Close()
+	bcd2asc(rec[10:14], 4)
+	bcd2asc(rec[14:22], 8)
+	bcd2asc(rec[30:38], 8)
+	bcd2asc(rec[54:62], 8)
+	bcd2asc(rec[62:70], 8)
 	_, err = prepStmt.Exec(
-		smftime(rec[6:10]),
-		smfdate(rec[10:14]),
-		string(rec[14:18]),
-		string(rec[18:26]),
-		smftime(rec[26:30]),
-		smfdate(rec[30:34]),
-		string(rec[34:42]),
-		int(rec[42]),
-		smftime(rec[43:47]),
-		smfdate(rec[47:51]),
-		binary.BigEndian.Uint32(rec[51:55]),
-		binary.BigEndian.Uint16(rec[55:57]),
-		int(rec[57]),
-		string(rec[58:66]),
-		string(rec[66:74]),
-		binary.BigEndian.Uint16(rec[76:78]),
-		binary.BigEndian.Uint16(rec[78:80]),
-		binary.BigEndian.Uint32(rec[82:86]),
-		int(rec[86]),
+		smftime(rec[2:6]),
+		smfdate(rec[6:10]),
+		string(rec[10:14]),
+		string(rec[14:22]),
+		smftime(rec[22:26]),
+		smfdate(rec[26:30]),
+		string(rec[30:38]),
+		int(rec[38]),
+		smftime(rec[39:43]),
+		smfdate(rec[43:47]),
+		binary.BigEndian.Uint32(rec[47:51]),
+		binary.BigEndian.Uint16(rec[51:53]),
+		int(rec[53]),
+		string(rec[54:62]),
+		string(rec[62:70]),
+		binary.BigEndian.Uint16(rec[72:74]),
+		binary.BigEndian.Uint16(rec[74:76]),
+		binary.BigEndian.Uint32(rec[78:82]),
+		int(rec[82]),
 	)
 	if err != nil {
 		log.Printf("%q: %s\n", err, sqlStmt)

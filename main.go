@@ -52,7 +52,7 @@ func main() {
 	rdr := bufio.NewReader(file)
 	var record = make([]byte, 64*1024)
 	var count int = 0
-	var offset int = 0
+	var offset uint = 0
 	var matrix = make([]uint64, 256)
 	var buffer = make([]byte, 2)
 	var reclen, recseg uint16
@@ -64,35 +64,35 @@ func main() {
 			break
 		}
 		reclen = binary.BigEndian.Uint16(buffer)
-		copy(record[offset:], buffer)
-		offset += 2
-		// spdlog::debug("Record length: %d (0x%04x)", reclen, reclen)
+		// fmt.Printf("Record length: %d (0x%04x)", reclen, reclen)
 
 		_, err = io.ReadFull(rdr, buffer)
 		if err != nil {
 			fmt.Print(err)
 		}
 		recseg = binary.BigEndian.Uint16(buffer)
-		copy(record[offset:], buffer)
-		offset += 2
-		// spdlog::debug("Record segment: {0:d} (0x{0:04x})", recseg)
+		// fmt.Printf("Record segment: %d (0x%04x)", recseg, recseg)
+
+		// Segment descriptor:
+		//  0x0000 -> record starts and ends in the block
+		//  0x0100 -> record begins but does not end in this block
+		//  0x0200 -> record ends but does not begin in this block
+		//  0x0300 -> record neither starts nor ends in this block
 
 		// Check if segment descriptor is valid -> recseg in (0, 256, 512, 768)
 		if recseg&0xfcff != 0 {
 			log.Println("Invalid file format")
 			log.Fatal("SMF file must be transferred preserving RDW information")
 		}
-		bufrec := make([]byte, reclen-4)
-		_, err = io.ReadFull(rdr, bufrec)
+		_, err = io.ReadFull(rdr, record[offset:offset+uint(reclen)-4])
 		if err != nil {
 			fmt.Print(err)
 		}
-		copy(record[offset:], bufrec)
-		offset += int(reclen - 4)
+		offset += uint(reclen) - 4
 		if recseg == 0 || recseg == 512 {
-			recnum := uint(record[5])
+			recnum := uint(record[1])
 			matrix[recnum] += 1
-			//smfParse(record)
+			smfParse(record)
 			count++
 			offset = 0
 		}
