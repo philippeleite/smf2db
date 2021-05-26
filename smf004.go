@@ -35,7 +35,30 @@ func smf004Init() {
 		SMF4SRBT   INT        NOT NULL,
 		SMF4RIN    INT        NOT NULL,
 		SMF4RLCT   INT        NOT NULL,
-		SMF4LENN   INT        NOT NULL
+		SMF4LENN   INT        NOT NULL,
+		SMF4PGIN   INT        NOT NULL,
+		SMF4PGOT   INT        NOT NULL,
+		SMF4NSW    INT        NOT NULL,
+		SMF4PSI    INT        NOT NULL,
+		SMF4PSO    INT        NOT NULL,
+		SMF4VPI    INT        NOT NULL,
+		SMF4VPO    INT        NOT NULL,
+		SMF4SST    INT        NOT NULL,
+		SMF4ACT    INT        NOT NULL,
+		SMF4PGNO   INT        NOT NULL,
+		SMF4TRAN   INT        NOT NULL,
+		SMF4CPM    INT        NOT NULL,
+		SMF4RCLM   INT        NOT NULL,
+		SMF4CPGN   INT        NOT NULL,
+		SMF4HSPI   INT        NOT NULL,
+		SMF4PGST   INT        NOT NULL,
+		SMF4PSEC   INT        NOT NULL,
+		SMF4LPAI   INT        NOT NULL,
+		SMF4HSPO   INT        NOT NULL,
+		SMF4CPUS   INT        NOT NULL,
+		SMF4IOCS   INT        NOT NULL,
+		SMF4MSOS   INT        NOT NULL,
+		SMF4SRBS   INT        NOT NULL
 	);
 	`
 	_, err := db.Exec(sqlStmt)
@@ -48,6 +71,29 @@ func smf004Parse(rec []byte) {
 	sqlStmt := `
 		INSERT INTO smf004
 		VALUES (
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
 			?,
 			?,
 			?,
@@ -87,6 +133,9 @@ func smf004Parse(rec []byte) {
 	bcd2asc(rec[30:38], 8) // SMF4UIF
 	bcd2asc(rec[54:62], 8) // SMF4PGMN
 	bcd2asc(rec[62:70], 8) // SMF4STMN
+
+	reloc := int(binary.BigEndian.Uint16(rec[100:102]))
+	//numDevs := (int(binary.BigEndian.Uint16(rec[102:104])) - 2)/8
 	_, err = prepStmt.Exec(
 		smftime(rec[2:6]),                          // SMF4TME
 		smfdate(rec[6:10]),                         // SMF4DTE
@@ -114,6 +163,30 @@ func smf004Parse(rec []byte) {
 		int(binary.BigEndian.Uint16(rec[98:100])),  // SMF4RIN
 		int(binary.BigEndian.Uint16(rec[100:102])), // SMF4RLCT
 		int(binary.BigEndian.Uint16(rec[102:104])), // SMF4LENN
+		// Start of Relocation section
+		int(binary.BigEndian.Uint32(rec[reloc+0:reloc+4])),   // SMF4PGIN
+		int(binary.BigEndian.Uint32(rec[reloc+4:reloc+8])),   // SMF4PGOT
+		int(binary.BigEndian.Uint32(rec[reloc+8:reloc+12])),  // SMF4NSW
+		int(binary.BigEndian.Uint32(rec[reloc+12:reloc+16])), // SMF4PSI
+		int(binary.BigEndian.Uint32(rec[reloc+16:reloc+20])), // SMF4PSO
+		int(binary.BigEndian.Uint32(rec[reloc+20:reloc+24])), // SMF4VPI
+		int(binary.BigEndian.Uint32(rec[reloc+24:reloc+28])), // SMF4VPO
+		int(binary.BigEndian.Uint32(rec[reloc+28:reloc+32])), // SMF4SST
+		int(binary.BigEndian.Uint32(rec[reloc+32:reloc+36])), // SMF4ACT
+		int(binary.BigEndian.Uint16(rec[reloc+36:reloc+38])), // SMF4PGNO
+		int(binary.BigEndian.Uint32(rec[reloc+38:reloc+42])), // SMF4TRAN
+		int(binary.BigEndian.Uint32(rec[reloc+42:reloc+46])), // SMF4CPM
+		int(binary.BigEndian.Uint32(rec[reloc+46:reloc+50])), // SMF4RCLM
+		int(binary.BigEndian.Uint32(rec[reloc+50:reloc+54])), // SMF4CPGN
+		int(binary.BigEndian.Uint32(rec[reloc+54:reloc+58])), // SMF4HSPI
+		int(binary.BigEndian.Uint32(rec[reloc+58:reloc+62])), // SMF4PGST
+		int(binary.BigEndian.Uint64(rec[reloc+62:reloc+70])), // SMF4PSEC
+		int(binary.BigEndian.Uint32(rec[reloc+70:reloc+74])), // SMF4LPAI
+		int(binary.BigEndian.Uint32(rec[reloc+74:reloc+78])), // SMF4HSPO
+		int(binary.BigEndian.Uint32(rec[reloc+78:reloc+82])), // SMF4CPUS
+		int(binary.BigEndian.Uint32(rec[reloc+82:reloc+86])), // SMF4IOCS
+		int(binary.BigEndian.Uint32(rec[reloc+86:reloc+90])), // SMF4MSOS
+		int(binary.BigEndian.Uint32(rec[reloc+90:reloc+94])), // SMF4SRBS
 	)
 	if err != nil {
 		log.Printf("%q: %s\n", err, sqlStmt)
