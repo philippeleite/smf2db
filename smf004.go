@@ -65,6 +65,36 @@ func smf004Init() {
 	if err != nil {
 		log.Printf("%q: %s\n", err, sqlStmt)
 	}
+
+	sqlStmt2 := `
+	DROP TABLE IF EXISTS smf004_dev;
+	CREATE TABLE smf004_dev (
+		SMF4TME    DATETIME   NOT NULL,
+		SMF4DTE    DATETIME   NOT NULL,
+		SMF4DEVC   INT        NOT NULL,
+		SMF4UTYP   INT        NOT NULL,
+		SMF4CUAD   INT        NOT NULL,
+		SMF4EXCP   INT        NOT NULL
+	);
+	`
+	_, err = db.Exec(sqlStmt2)
+	if err != nil {
+		log.Printf("%q: %s\n", err, sqlStmt2)
+	}
+
+	sqlStmt3 := `
+	DROP TABLE IF EXISTS smf004_acct;
+	CREATE TABLE smf004_acct (
+		SMF4TME    DATETIME   NOT NULL,
+		SMF4DTE    DATETIME   NOT NULL,
+		SMF4SETM   INT        NOT NULL,
+		SMF4ACTF   TEXT       NOT NULL
+	);
+	`
+	_, err = db.Exec(sqlStmt3)
+	if err != nil {
+		log.Printf("%q: %s\n", err, sqlStmt3)
+	}
 }
 
 func smf004Parse(rec []byte) {
