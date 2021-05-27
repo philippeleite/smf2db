@@ -2,10 +2,10 @@ package main
 
 import (
 	"encoding/binary"
-	"time"
+	"fmt"
 )
 
-func smfdate(sdate []byte) time.Time {
+func smfdate(sdate []byte) string {
 	var monthDays = []int{31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31}
 	dayOfYear := int((sdate[3] >> 4) +
 		((sdate[2] & 0x0f) * 10) +
@@ -25,8 +25,8 @@ func smfdate(sdate []byte) time.Time {
 		}
 		dayOfMonth -= mlen
 	}
-	//return fmt.Sprintf("%04d-%02d-%02d", year, month+1, dayOfMonth)
-	return time.Date(year, time.Month(month+1), dayOfMonth, 0, 0, 0, 0, time.UTC)
+	return fmt.Sprintf("%04d-%02d-%02d 00:00:00.000", year, month+1, dayOfMonth)
+	//return time.Date(year, time.Month(month+1), dayOfMonth, 0, 0, 0, 0, time.UTC)
 }
 
 func divmod(numerator, denominator int) (quotient, remainder int) {
@@ -35,13 +35,13 @@ func divmod(numerator, denominator int) (quotient, remainder int) {
 	return
 }
 
-func smftime(stime []byte) time.Time {
+func smftime(stime []byte) string {
 	ttime := binary.BigEndian.Uint32(stime)
 	dv1quot, dv1rem := divmod(int(ttime), 360_000)
 	dv2quot, dv2rem := divmod(dv1rem, 6_000)
 	dv3quot, dv3rem := divmod(dv2rem, 100)
-	//return fmt.Sprintf("%02d:%02d:%02d.%03d", dv1quot, dv2quot, dv3quot, dv3rem*10)
-	return time.Date(0, 0, 0, dv1quot, dv2quot, dv3quot, dv3rem*10_000_000, time.UTC)
+	return fmt.Sprintf("0000-00-00 %02d:%02d:%02d.%03d", dv1quot, dv2quot, dv3quot, dv3rem*10)
+	// return time.Date(0, 0, 0, dv1quot, dv2quot, dv3quot, dv3rem*10_000_000, time.UTC)
 }
 
 func bcd2asc(str []byte, len int) {

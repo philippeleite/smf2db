@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	_ "github.com/mattn/go-sqlite3"
 	"log"
+	"strings"
 )
 
 func smf004Init() {
@@ -165,7 +166,7 @@ func smf004Parse(rec []byte) {
 	bcd2asc(rec[62:70], 8) // SMF4STMN
 
 	reloc := int(binary.BigEndian.Uint16(rec[100:102]))
-	//numDevs := (int(binary.BigEndian.Uint16(rec[102:104])) - 2)/8
+
 	_, err = prepStmt.Exec(
 		smftime(rec[2:6]),                          // SMF4TME
 		smfdate(rec[6:10]),                         // SMF4DTE
@@ -220,5 +221,82 @@ func smf004Parse(rec []byte) {
 	)
 	if err != nil {
 		log.Printf("%q: %s\n", err, sqlStmt)
+	}
+
+	sqlStmt2 := `
+		INSERT INTO smf004_dev
+		VALUES (
+			?,
+			?,
+			?,
+			?,
+			?,
+			?
+		);
+`
+
+	numDevs := (int(binary.BigEndian.Uint16(rec[102:104])) - 2) / 8
+
+	prepStmt2, err := db.Prepare(sqlStmt2)
+	if err != nil {
+		log.Printf("%q: %s\n", err, sqlStmt2)
+	}
+	defer prepStmt2.Close()
+
+	devOff := 104
+	for i := 0; i < numDevs; i++ {
+		_, err = prepStmt2.Exec(
+			smftime(rec[2:6]),  // SMF4TME
+			smfdate(rec[6:10]), // SMF4DTE
+			int(rec[devOff+0]), // SMF4DEVC
+			int(rec[devOff+1]), // SMF4UTYP
+			int(binary.BigEndian.Uint16(rec[devOff+2:devOff+4])), // SMF4CUAD
+			int(binary.BigEndian.Uint32(rec[devOff+4:devOff+8])), // SMF4EXCP
+		)
+		if err != nil {
+			log.Printf("%q: %s\n", err, sqlStmt2)
+		}
+		devOff += 8
+	}
+
+	acctOff := 104 + (numDevs * 8)
+	acctLen := int(rec[acctOff])
+
+	if acctLen > 0 {
+		sqlStmt3 := `
+		INSERT INTO smf004_acct
+		VALUES (
+			?,
+			?,
+			?,
+			?
+		);
+`
+
+		prepStmt3, err := db.Prepare(sqlStmt3)
+		if err != nil {
+			log.Printf("%q: %s\n", err, sqlStmt3)
+		}
+		defer prepStmt3.Close()
+
+		var acctFields strings.Builder
+		acctFields.WriteString(" ")
+		numFields := int(rec[acctOff+4])
+		fieldOff := acctOff + 5
+		for i := 0; i < numFields; i++ {
+			fieldLen := int(rec[fieldOff])
+			bcd2asc(rec[fieldOff+1:fieldOff+1+fieldLen], fieldLen)
+			acctFields.WriteString(string(rec[fieldOff+1:fieldOff+1+fieldLen]) + " ")
+			fieldOff += fieldLen + 1
+		}
+		_, err = prepStmt3.Exec(
+			smftime(rec[2:6]),                 // SMF4TME
+			smfdate(rec[6:10]),                // SMF4DTE
+			b3toInt(rec[acctOff+1:acctOff+4]), // SMF4SETM
+			acctFields.String(),               // SMF4ACTF
+		)
+		if err != nil {
+			log.Printf("%q: %s\n", err, sqlStmt3)
+		}
 	}
 }
