@@ -35,8 +35,6 @@ func smf004Init() {
 		SMF4PPST   INT        NOT NULL,
 		SMF4SRBT   INT        NOT NULL,
 		SMF4RIN    INT        NOT NULL,
-		SMF4RLCT   INT        NOT NULL,
-		SMF4LENN   INT        NOT NULL,
 		SMF4PGIN   INT        NOT NULL,
 		SMF4PGOT   INT        NOT NULL,
 		SMF4NSW    INT        NOT NULL,
@@ -148,8 +146,6 @@ func smf004Parse(rec []byte) {
 			?,
 			?,
 			?,
-			?,
-			?,
 			?
 		);
 `
@@ -159,41 +155,39 @@ func smf004Parse(rec []byte) {
 	}
 	defer prepStmt.Close()
 
-	bcd2asc(rec[10:14], 4) // SMF4SID
-	bcd2asc(rec[14:22], 8) // SMF4JBN
-	bcd2asc(rec[30:38], 8) // SMF4UIF
-	bcd2asc(rec[54:62], 8) // SMF4PGMN
-	bcd2asc(rec[62:70], 8) // SMF4STMN
+	bcd2asc(rec[10:14]) // SMF4SID
+	bcd2asc(rec[14:22]) // SMF4JBN
+	bcd2asc(rec[30:38]) // SMF4UIF
+	bcd2asc(rec[54:62]) // SMF4PGMN
+	bcd2asc(rec[62:70]) // SMF4STMN
 
 	reloc := int(binary.BigEndian.Uint16(rec[100:102]))
 
 	_, err = prepStmt.Exec(
-		smftime(rec[2:6]),                          // SMF4TME
-		smfdate(rec[6:10]),                         // SMF4DTE
-		string(rec[10:14]),                         // SMF4SID
-		string(rec[14:22]),                         // SMF4JBN
-		smftime(rec[22:26]),                        // SMF4RST
-		smfdate(rec[26:30]),                        // SMF4RSD
-		string(rec[30:38]),                         // SMF4UIF
-		int(rec[38]),                               // SMF4STN
-		smftime(rec[39:43]),                        // SMF4SIT
-		smfdate(rec[43:47]),                        // SMF4STID
-		int(binary.BigEndian.Uint32(rec[47:51])),   // SMF4NCI
-		int(binary.BigEndian.Uint16(rec[51:53])),   // SMF4SCC
-		int(rec[53]),                               // SMF4PRTY
-		string(rec[54:62]),                         // SMF4PGMN
-		string(rec[62:70]),                         // SMF4STMN
-		int(binary.BigEndian.Uint16(rec[72:74])),   // SMF4SYST
-		int(binary.BigEndian.Uint16(rec[74:76])),   // SMF4HOST
-		int(binary.BigEndian.Uint32(rec[78:82])),   // SMF4RSH0
-		int(rec[82]),                               // SMF4SPK
-		int(rec[83]),                               // SMF4STI
-		int(binary.BigEndian.Uint32(rec[86:90])),   // SMF4AST
-		int(binary.BigEndian.Uint32(rec[90:94])),   // SMF4PPST
-		b3toInt(rec[95:98]),                        // SMF4SRBT
-		int(binary.BigEndian.Uint16(rec[98:100])),  // SMF4RIN
-		int(binary.BigEndian.Uint16(rec[100:102])), // SMF4RLCT
-		int(binary.BigEndian.Uint16(rec[102:104])), // SMF4LENN
+		smftime(rec[2:6]),                         // SMF4TME
+		smfdate(rec[6:10]),                        // SMF4DTE
+		string(rec[10:14]),                        // SMF4SID
+		string(rec[14:22]),                        // SMF4JBN
+		smftime(rec[22:26]),                       // SMF4RST
+		smfdate(rec[26:30]),                       // SMF4RSD
+		string(rec[30:38]),                        // SMF4UIF
+		int(rec[38]),                              // SMF4STN
+		smftime(rec[39:43]),                       // SMF4SIT
+		smfdate(rec[43:47]),                       // SMF4STID
+		int(binary.BigEndian.Uint32(rec[47:51])),  // SMF4NCI
+		int(binary.BigEndian.Uint16(rec[51:53])),  // SMF4SCC
+		int(rec[53]),                              // SMF4PRTY
+		string(rec[54:62]),                        // SMF4PGMN
+		string(rec[62:70]),                        // SMF4STMN
+		int(binary.BigEndian.Uint16(rec[72:74])),  // SMF4SYST
+		int(binary.BigEndian.Uint16(rec[74:76])),  // SMF4HOST
+		int(binary.BigEndian.Uint32(rec[78:82])),  // SMF4RSH0
+		int(rec[82]),                              // SMF4SPK
+		int(rec[83]),                              // SMF4STI
+		int(binary.BigEndian.Uint32(rec[86:90])),  // SMF4AST
+		int(binary.BigEndian.Uint32(rec[90:94])),  // SMF4PPST
+		b3toInt(rec[95:98]),                       // SMF4SRBT
+		int(binary.BigEndian.Uint16(rec[98:100])), // SMF4RIN
 		// Start of Relocation section
 		int(binary.BigEndian.Uint32(rec[reloc+0:reloc+4])),   // SMF4PGIN
 		int(binary.BigEndian.Uint32(rec[reloc+4:reloc+8])),   // SMF4PGOT
@@ -285,7 +279,7 @@ func smf004Parse(rec []byte) {
 		fieldOff := acctOff + 5
 		for i := 0; i < numFields; i++ {
 			fieldLen := int(rec[fieldOff])
-			bcd2asc(rec[fieldOff+1:fieldOff+1+fieldLen], fieldLen)
+			bcd2asc(rec[fieldOff+1 : fieldOff+1+fieldLen])
 			acctFields.WriteString(string(rec[fieldOff+1:fieldOff+1+fieldLen]) + " ")
 			fieldOff += fieldLen + 1
 		}
