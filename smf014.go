@@ -66,6 +66,14 @@ func smf014Init() {
 		SMFDEBFL   INT        NOT NULL,
 		SMFDEBOP   INT        NOT NULL,
 		SMFDEBVL   INT        NOT NULL,
+		SMFDCBBL   INT        NOT NULL,
+		SMFDSSNO   TEXT       NOT NULL,
+		SMF14TDA   INT        NOT NULL,
+		SMF14NTU   INT        NOT NULL,
+		SMF14NTR   INT        NOT NULL,
+		SMF14NER   INT        NOT NULL,
+		SMF14EDI   INT        NOT NULL,
+		SMF14FG1   INT        NOT NULL,
 		SMF14OPD   DATETIME   NOT NULL
 	);
 	`
@@ -79,6 +87,14 @@ func smf014Parse(rec []byte) {
 	sqlStmt := `
 		INSERT INTO smf014
 		VALUES (
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
 			?,
 			?,
 			?,
@@ -162,6 +178,32 @@ func smf014Parse(rec []byte) {
 	//	acctFields.WriteString(string(rec[fieldOff+1:fieldOff+1+fieldLen]) + " ")
 	//	fieldOff += fieldLen + 1
 	//}
+
+	// DCB/DEB section (Tape)
+	var SMFDCBBL int
+	var SMFDSSNO string
+	var SMF14TDA int
+
+	//DCB/DEB section (DASD)
+	var SMF14NTU int
+	var SMF14NTR int
+	var SMF14NER int
+	var SMF14EDI int
+	var SMF14FG1 int
+
+	// Check if DASD dataset
+	if rec[38]&0x20 != 0 {
+		SMF14NTU = int(binary.BigEndian.Uint32(rec[252:256]))
+		SMF14NTR = int(binary.BigEndian.Uint32(rec[256:260]))
+		SMF14NER = int(rec[260])
+		SMF14EDI = int(rec[261])
+		SMF14FG1 = int(rec[262])
+	} else {
+		SMFDCBBL = int(binary.BigEndian.Uint32(rec[252:256]))
+		bcd2asc(rec[256:262])
+		SMFDSSNO = string(rec[256:262])
+		SMF14TDA = int(rec[263])
+	}
 	_, err = prepStmt.Exec(
 		smftime(rec[2:6]),                        // SMF14TME
 		smfdate(rec[6:10]),                       // SMF14DTE
@@ -218,7 +260,15 @@ func smf014Parse(rec []byte) {
 		int(rec[248]), // SMFDEBFL
 		int(rec[249]), // SMFDEBOP
 		int(binary.BigEndian.Uint16(rec[250:252])), // SMFDEBVL
-		smfdate(rec[264:268]),                      // SMF14OPD
+		SMFDCBBL,
+		SMFDSSNO,
+		SMF14TDA,
+		SMF14NTU,
+		SMF14NTR,
+		SMF14NER,
+		SMF14EDI,
+		SMF14FG1,
+		smfdate(rec[264:268]), // SMF14OPD
 		// Start of relocate section
 	)
 	if err != nil {
