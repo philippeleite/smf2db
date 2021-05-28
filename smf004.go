@@ -57,7 +57,9 @@ func smf004Init() {
 		SMF4CPUS   INT        NOT NULL,
 		SMF4IOCS   INT        NOT NULL,
 		SMF4MSOS   INT        NOT NULL,
-		SMF4SRBS   INT        NOT NULL
+		SMF4SRBS   INT        NOT NULL,
+		SMF4SETM   INT        NOT NULL,
+		SMF4ACTF   TEXT       NOT NULL
 	);
 	`
 	_, err := db.Exec(sqlStmt)
@@ -80,26 +82,14 @@ func smf004Init() {
 	if err != nil {
 		log.Printf("%q: %s\n", err, sqlStmt2)
 	}
-
-	sqlStmt3 := `
-	DROP TABLE IF EXISTS smf004_acct;
-	CREATE TABLE smf004_acct (
-		SMF4TME    DATETIME   NOT NULL,
-		SMF4DTE    DATETIME   NOT NULL,
-		SMF4SETM   INT        NOT NULL,
-		SMF4ACTF   TEXT       NOT NULL
-	);
-	`
-	_, err = db.Exec(sqlStmt3)
-	if err != nil {
-		log.Printf("%q: %s\n", err, sqlStmt3)
-	}
 }
 
 func smf004Parse(rec []byte) {
 	sqlStmt := `
 		INSERT INTO smf004
 		VALUES (
+			?,
+			?,
 			?,
 			?,
 			?,
@@ -162,6 +152,20 @@ func smf004Parse(rec []byte) {
 	bcd2asc(rec[62:70]) // SMF4STMN
 
 	reloc := int(binary.BigEndian.Uint16(rec[100:102]))
+	numDevs := (int(binary.BigEndian.Uint16(rec[102:104])) - 2) / 8
+
+	acctOff := 104 + (numDevs * 8)
+
+	var acctFields strings.Builder
+	acctFields.WriteString(" ")
+	numFields := int(rec[acctOff+4])
+	fieldOff := acctOff + 5
+	for i := 0; i < numFields; i++ {
+		fieldLen := int(rec[fieldOff])
+		bcd2asc(rec[fieldOff+1 : fieldOff+1+fieldLen])
+		acctFields.WriteString(string(rec[fieldOff+1:fieldOff+1+fieldLen]) + " ")
+		fieldOff += fieldLen + 1
+	}
 
 	_, err = prepStmt.Exec(
 		smftime(rec[2:6]),                         // SMF4TME
@@ -212,6 +216,8 @@ func smf004Parse(rec []byte) {
 		int(binary.BigEndian.Uint32(rec[reloc+82:reloc+86])), // SMF4IOCS
 		int(binary.BigEndian.Uint32(rec[reloc+86:reloc+90])), // SMF4MSOS
 		int(binary.BigEndian.Uint32(rec[reloc+90:reloc+94])), // SMF4SRBS
+		b3toInt(rec[acctOff+1:acctOff+4]),                    // SMF4SETM
+		acctFields.String(),                                  // SMF4ACTF
 	)
 	if err != nil {
 		log.Printf("%q: %s\n", err, sqlStmt)
@@ -228,8 +234,6 @@ func smf004Parse(rec []byte) {
 			?
 		);
 `
-
-	numDevs := (int(binary.BigEndian.Uint16(rec[102:104])) - 2) / 8
 
 	prepStmt2, err := db.Prepare(sqlStmt2)
 	if err != nil {
@@ -251,46 +255,5 @@ func smf004Parse(rec []byte) {
 			log.Printf("%q: %s\n", err, sqlStmt2)
 		}
 		devOff += 8
-	}
-
-	acctOff := 104 + (numDevs * 8)
-	acctLen := int(rec[acctOff])
-
-	if acctLen > 0 {
-		sqlStmt3 := `
-		INSERT INTO smf004_acct
-		VALUES (
-			?,
-			?,
-			?,
-			?
-		);
-`
-
-		prepStmt3, err := db.Prepare(sqlStmt3)
-		if err != nil {
-			log.Printf("%q: %s\n", err, sqlStmt3)
-		}
-		defer prepStmt3.Close()
-
-		var acctFields strings.Builder
-		acctFields.WriteString(" ")
-		numFields := int(rec[acctOff+4])
-		fieldOff := acctOff + 5
-		for i := 0; i < numFields; i++ {
-			fieldLen := int(rec[fieldOff])
-			bcd2asc(rec[fieldOff+1 : fieldOff+1+fieldLen])
-			acctFields.WriteString(string(rec[fieldOff+1:fieldOff+1+fieldLen]) + " ")
-			fieldOff += fieldLen + 1
-		}
-		_, err = prepStmt3.Exec(
-			smftime(rec[2:6]),                 // SMF4TME
-			smfdate(rec[6:10]),                // SMF4DTE
-			b3toInt(rec[acctOff+1:acctOff+4]), // SMF4SETM
-			acctFields.String(),               // SMF4ACTF
-		)
-		if err != nil {
-			log.Printf("%q: %s\n", err, sqlStmt3)
-		}
 	}
 }

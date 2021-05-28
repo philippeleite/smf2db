@@ -31,8 +31,33 @@ func smf014Init() {
 		SMFTIOE5   TEXT       NOT NULL,
 		SMFTIOE6   INT        NOT NULL,
 		SMFTIOE7   INT        NOT NULL,
-		SMFDSNM    TEXT       NOT NULL,
-		SMFELNM    TEXT       NOT NULL,
+		JFCBDSNM   TEXT       NOT NULL,
+		JFCBELNM   TEXT       NOT NULL,
+		JFCBTSDM   INT        NOT NULL,
+		JFCBDSCB   INT        NOT NULL,
+		JFCAMSTR   INT        NOT NULL,
+		JFCBADBF   INT        NOT NULL,
+		JFCNLREC   INT        NOT NULL,
+		JFCTDSI1   INT        NOT NULL,
+		JFCTDSI2   INT        NOT NULL,
+		JFCBLTYP   INT        NOT NULL,
+		JFCBFLSQ   INT        NOT NULL,
+		JFCBVLSQ   INT        NOT NULL,
+		JFCBFLG1   INT        NOT NULL,
+		JFCBFLG2   INT        NOT NULL,
+		JFCBCRDT   DATETIME   NOT NULL,
+		JFCBXPDT   DATETIME   NOT NULL,
+		JFCBIND1   INT        NOT NULL,
+		JFCBIND2   INT        NOT NULL,
+		JFCDSRG1   INT        NOT NULL,
+		JFCDSRG2   INT        NOT NULL,
+		JFCRECFM   INT        NOT NULL,
+		JFCBLKSI   INT        NOT NULL,
+		JFCLRECL   INT        NOT NULL,
+		JFCBPQTY   INT        NOT NULL,
+		JFCBCTRI   INT        NOT NULL,
+		JFCBSQTY   INT        NOT NULL,
+		JFCBDQTY   INT        NOT NULL,
 		SMFDCBOR   INT        NOT NULL,
 		SMFDCBRF   INT        NOT NULL,
 		SMFDCBMF   INT        NOT NULL,
@@ -54,6 +79,31 @@ func smf014Parse(rec []byte) {
 	sqlStmt := `
 		INSERT INTO smf014
 		VALUES (
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
 			?,
 			?,
 			?,
@@ -133,9 +183,34 @@ func smf014Parse(rec []byte) {
 		string(rec[52:60]),                       // SMFTIOE5
 		b3toInt(rec[60:63]),                      // SMFTIOE6
 		int(rec[63]),                             // SMFTIOE7
-		string(rec[jfcboff:jfcboff+44]),          // SMFDSNM
-		string(rec[jfcboff+0x2c:jfcboff+0x2c+8]),   // SMFELNM
-		int(binary.BigEndian.Uint16(rec[240:242])), // SMFDCBOR
+		string(rec[jfcboff:jfcboff+44]),          // JFCBDSNM
+		string(rec[jfcboff+0x2c:jfcboff+0x2c+8]),                       // JFCBELNM
+		int(rec[jfcboff+0x34]),                                         // JFCBTSDM
+		b3toInt(rec[jfcboff+0x35:jfcboff+0x35+3]),                      // JFCBDSCB
+		int(binary.BigEndian.Uint16(rec[jfcboff+0x3a:jfcboff+0x3a+2])), // JFCAMSTR
+		int(binary.BigEndian.Uint16(rec[jfcboff+0x3c:jfcboff+0x3c+2])), // JFCBADBF
+		int(binary.BigEndian.Uint16(rec[jfcboff+0x3e:jfcboff+0x3e+2])), // JFCNLREC
+		int(rec[jfcboff+0x40]),                                         // JFCTDSI1
+		int(rec[jfcboff+0x41]),                                         // JFCTDSI2
+		int(rec[jfcboff+0x42]),                                         // JFCBLTYP
+		int(binary.BigEndian.Uint16(rec[jfcboff+0x44:jfcboff+0x44+2])), // JFCBFLSQ
+		int(binary.BigEndian.Uint16(rec[jfcboff+0x46:jfcboff+0x46+2])), // JFCBVLSQ
+		int(rec[jfcboff+0x4d]),                                         // JFCBFLG1
+		int(rec[jfcboff+0x4e]),                                         // JFCBFLG2
+		filedate(rec[jfcboff+0x50:jfcboff+0x50+3]),                     // JFCBCRDT
+		filedate(rec[jfcboff+0x53:jfcboff+0x53+3]),                     // JFCBXPDT
+		int(rec[jfcboff+0x56]),                                         // JFCBIND1
+		int(rec[jfcboff+0x57]),                                         // JFCBIND2
+		int(rec[jfcboff+0x62]),                                         // JFCDSRG1
+		int(rec[jfcboff+0x63]),                                         // JFCDSRG2
+		int(rec[jfcboff+0x64]),                                         // JFCRECFM
+		int(binary.BigEndian.Uint16(rec[jfcboff+0x66:jfcboff+0x66+2])), // JFCBLKSI
+		int(binary.BigEndian.Uint16(rec[jfcboff+0x68:jfcboff+0x68+2])), // JFCLRECL
+		b3toInt(rec[jfcboff+0x98:jfcboff+0x98+3]),                      // JFCBPQTY
+		int(rec[jfcboff+0x9B]),                                         // JFCBCTRI
+		b3toInt(rec[jfcboff+0x9c:jfcboff+0x9c+3]),                      // JFCBSQTY
+		b3toInt(rec[jfcboff+0xa0:jfcboff+0xa0+3]),                      // JFCBDQTY
+		int(binary.BigEndian.Uint16(rec[240:242])),                     // SMFDCBOR
 		int(rec[242]), // SMFDCBRF
 		int(binary.BigEndian.Uint16(rec[243:245])), // SMFDCBMF
 		int(rec[245]), // SMFDCBFL

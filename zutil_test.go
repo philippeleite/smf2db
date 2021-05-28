@@ -21,6 +21,19 @@ func TestSmfDate(t *testing.T) {
 	}
 }
 
+func TestFileDate(t *testing.T) {
+	tdate := []byte{0x74, 0x00, 0x60}
+	sdate := filedate(tdate)
+	if sdate != "2016-02-29 00:00:00.000" {
+		t.Errorf("Date error")
+	}
+	tdate = []byte{0x00, 0x00, 0x00}
+	sdate = filedate(tdate)
+	if sdate != "0000-00-00 00:00:00.000" {
+		t.Errorf("Date error")
+	}
+}
+
 func TestAsc2bcd(t *testing.T) {
 	var tstr = []byte("ABCD")
 	asc2bcd(tstr)
