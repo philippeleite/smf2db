@@ -4,7 +4,7 @@ import (
 	"encoding/binary"
 	_ "github.com/mattn/go-sqlite3"
 	"log"
-	"strings"
+	//"strings"
 )
 
 func smf014Init() {
@@ -93,25 +93,25 @@ func smf014Parse(rec []byte) {
 	}
 	defer prepStmt.Close()
 
-	bcd2asc(rec[10:14])   // SMF14SID
-	bcd2asc(rec[14:22])   // SMF14JBN
-	bcd2asc(rec[30:38])   // SMF14UID
-	bcd2asc(rec[52:60])   // SMFTIOE5
-	bcd2asc(rec[64:108])  // SMFDSNM
-	bcd2asc(rec[108:116]) // SMFELNM
+	jfcboff := 64
+	bcd2asc(rec[10:14])                         // SMF14SID
+	bcd2asc(rec[14:22])                         // SMF14JBN
+	bcd2asc(rec[30:38])                         // SMF14UID
+	bcd2asc(rec[52:60])                         // SMFTIOE5
+	bcd2asc(rec[jfcboff : jfcboff+44])          // SMFDSNM
+	bcd2asc(rec[jfcboff+0x2c : jfcboff+0x2c+8]) // SMFELNM
 	// reloc := 93 + int(rec[92])
 
-	var acctFields strings.Builder
-	acctFields.WriteString(" ")
-	fieldOff := 117
-	numFields := int(rec[116])
-	for i := 0; i < numFields; i++ {
-		fieldLen := int(rec[fieldOff])
-		bcd2asc(rec[fieldOff+1 : fieldOff+1+fieldLen])
-		acctFields.WriteString(string(rec[fieldOff+1:fieldOff+1+fieldLen]) + " ")
-		fieldOff += fieldLen + 1
-	}
-	jfcboff := 64
+	//var acctFields strings.Builder
+	//acctFields.WriteString(" ")
+	//fieldOff := 117
+	//numFields := int(rec[116])
+	//for i := 0; i < numFields; i++ {
+	//	fieldLen := int(rec[fieldOff])
+	//	bcd2asc(rec[fieldOff+1 : fieldOff+1+fieldLen])
+	//	acctFields.WriteString(string(rec[fieldOff+1:fieldOff+1+fieldLen]) + " ")
+	//	fieldOff += fieldLen + 1
+	//}
 	_, err = prepStmt.Exec(
 		smftime(rec[2:6]),                        // SMF14TME
 		smfdate(rec[6:10]),                       // SMF14DTE

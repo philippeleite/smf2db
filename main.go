@@ -88,11 +88,11 @@ func main() {
 		if err != nil {
 			fmt.Print(err)
 		}
-		offset += uint(reclen) - 4
+		offset += (uint(reclen) - 4)
 		if recseg == 0 || recseg == 512 {
 			recnum := uint(record[1])
 			matrix[recnum] += 1
-			smfParse(record)
+			smfParse(record[:offset])
 			count++
 			offset = 0
 		}
