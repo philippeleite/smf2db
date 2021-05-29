@@ -1,11 +1,14 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/binary"
 	_ "github.com/mattn/go-sqlite3"
 	"log"
 	"strings"
 )
+
+var pStmt005 *sql.Stmt
 
 func smf005Init() {
 	sqlStmt := `
@@ -48,10 +51,8 @@ func smf005Init() {
 	if err != nil {
 		log.Printf("%q: %s\n", err, sqlStmt)
 	}
-}
 
-func smf005Parse(rec []byte) {
-	sqlStmt := `
+	sqlStmt2 := `
 		INSERT INTO smf005
 		VALUES (
 			?,
@@ -87,11 +88,13 @@ func smf005Parse(rec []byte) {
 			?
 		);
 	`
-	prepStmt, err := db.Prepare(sqlStmt)
+	pStmt005, err = db.Prepare(sqlStmt2)
 	if err != nil {
-		log.Printf("%q: %s\n", err, sqlStmt)
+		log.Printf("%q: %s\n", err, sqlStmt2)
 	}
-	defer prepStmt.Close()
+}
+
+func smf005Parse(rec []byte) {
 
 	bcd2asc(rec[10:14])  // SMF5SID
 	bcd2asc(rec[14:22])  // SMF5JBN
@@ -110,7 +113,7 @@ func smf005Parse(rec []byte) {
 		acctFields.WriteString(string(rec[fieldOff+1:fieldOff+1+fieldLen]) + " ")
 		fieldOff += fieldLen + 1
 	}
-	_, err = prepStmt.Exec(
+	_, err = pStmt005.Exec(
 		smftime(rec[2:6]),                        // SMF5TME
 		smfdate(rec[6:10]),                       // SMF5DTE
 		string(rec[10:14]),                       // SMF5SID
@@ -145,6 +148,6 @@ func smf005Parse(rec []byte) {
 		int(binary.BigEndian.Uint32(rec[reloc+12:reloc+16])), // SMF5SRBS
 	)
 	if err != nil {
-		log.Printf("%q: %s\n", err, sqlStmt)
+		log.Println(err)
 	}
 }

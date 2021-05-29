@@ -1,11 +1,15 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/binary"
 	_ "github.com/mattn/go-sqlite3"
 	"log"
 	"strings"
 )
+
+var p1Stmt004 *sql.Stmt
+var p2Stmt004 *sql.Stmt
 
 func smf004Init() {
 	sqlStmt := `
@@ -82,10 +86,8 @@ func smf004Init() {
 	if err != nil {
 		log.Printf("%q: %s\n", err, sqlStmt2)
 	}
-}
 
-func smf004Parse(rec []byte) {
-	sqlStmt := `
+	sqlStmt3 := `
 		INSERT INTO smf004
 		VALUES (
 			?,
@@ -139,11 +141,30 @@ func smf004Parse(rec []byte) {
 			?
 		);
 `
-	prepStmt, err := db.Prepare(sqlStmt)
+	p1Stmt004, err = db.Prepare(sqlStmt3)
 	if err != nil {
-		log.Printf("%q: %s\n", err, sqlStmt)
+		log.Printf("%q: %s\n", err, sqlStmt3)
 	}
-	defer prepStmt.Close()
+
+	sqlStmt4 := `
+		INSERT INTO smf004_dev
+		VALUES (
+			?,
+			?,
+			?,
+			?,
+			?,
+			?
+		);
+`
+
+	p2Stmt004, err = db.Prepare(sqlStmt4)
+	if err != nil {
+		log.Printf("%q: %s\n", err, sqlStmt4)
+	}
+}
+
+func smf004Parse(rec []byte) {
 
 	bcd2asc(rec[10:14]) // SMF4SID
 	bcd2asc(rec[14:22]) // SMF4JBN
@@ -167,7 +188,7 @@ func smf004Parse(rec []byte) {
 		fieldOff += fieldLen + 1
 	}
 
-	_, err = prepStmt.Exec(
+	_, err = p1Stmt004.Exec(
 		smftime(rec[2:6]),                         // SMF4TME
 		smfdate(rec[6:10]),                        // SMF4DTE
 		string(rec[10:14]),                        // SMF4SID
@@ -220,30 +241,12 @@ func smf004Parse(rec []byte) {
 		acctFields.String(),                                  // SMF4ACTF
 	)
 	if err != nil {
-		log.Printf("%q: %s\n", err, sqlStmt)
+		log.Println(err)
 	}
-
-	sqlStmt2 := `
-		INSERT INTO smf004_dev
-		VALUES (
-			?,
-			?,
-			?,
-			?,
-			?,
-			?
-		);
-`
-
-	prepStmt2, err := db.Prepare(sqlStmt2)
-	if err != nil {
-		log.Printf("%q: %s\n", err, sqlStmt2)
-	}
-	defer prepStmt2.Close()
 
 	devOff := 104
 	for i := 0; i < numDevs; i++ {
-		_, err = prepStmt2.Exec(
+		_, err = p2Stmt004.Exec(
 			smftime(rec[2:6]),  // SMF4TME
 			smfdate(rec[6:10]), // SMF4DTE
 			int(rec[devOff+0]), // SMF4DEVC
@@ -252,7 +255,7 @@ func smf004Parse(rec []byte) {
 			int(binary.BigEndian.Uint32(rec[devOff+4:devOff+8])), // SMF4EXCP
 		)
 		if err != nil {
-			log.Printf("%q: %s\n", err, sqlStmt2)
+			log.Println(err)
 		}
 		devOff += 8
 	}

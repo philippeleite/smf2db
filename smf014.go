@@ -1,11 +1,14 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/binary"
 	_ "github.com/mattn/go-sqlite3"
 	"log"
 	//"strings"
 )
+
+var p1Stmt014 *sql.Stmt
 
 func smf014Init() {
 	sqlStmt := `
@@ -81,10 +84,8 @@ func smf014Init() {
 	if err != nil {
 		log.Printf("%q: %s\n", err, sqlStmt)
 	}
-}
 
-func smf014Parse(rec []byte) {
-	sqlStmt := `
+	sqlStmt2 := `
 		INSERT INTO smf014
 		VALUES (
 			?,
@@ -153,11 +154,13 @@ func smf014Parse(rec []byte) {
 			?
 		);
 	`
-	prepStmt, err := db.Prepare(sqlStmt)
+	p1Stmt014, err = db.Prepare(sqlStmt2)
 	if err != nil {
-		log.Printf("%q: %s\n", err, sqlStmt)
+		log.Printf("%q: %s\n", err, sqlStmt2)
 	}
-	defer prepStmt.Close()
+}
+
+func smf014Parse(rec []byte) {
 
 	jfcboff := 64
 	bcd2asc(rec[10:14])                         // SMF14SID
@@ -204,7 +207,7 @@ func smf014Parse(rec []byte) {
 		SMFDSSNO = string(rec[256:262])
 		SMF14TDA = int(rec[263])
 	}
-	_, err = prepStmt.Exec(
+	_, err = p1Stmt014.Exec(
 		smftime(rec[2:6]),                        // SMF14TME
 		smfdate(rec[6:10]),                       // SMF14DTE
 		string(rec[10:14]),                       // SMF14SID
@@ -272,6 +275,6 @@ func smf014Parse(rec []byte) {
 		// Start of relocate section
 	)
 	if err != nil {
-		log.Printf("%q: %s\n", err, sqlStmt)
+		log.Println(err)
 	}
 }
