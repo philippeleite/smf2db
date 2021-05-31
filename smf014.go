@@ -206,6 +206,10 @@ func smf014Init() {
 func smf014Parse(rec []byte) {
 
 	jfcboff := 64
+	ucbOff := 268
+	numUcbs := int(rec[41])
+	ucbSize := int(rec[42])
+
 	bcd2asc(rec[10:14])                         // SMF14SID
 	bcd2asc(rec[14:22])                         // SMF14JBN
 	bcd2asc(rec[30:38])                         // SMF14UID
@@ -317,15 +321,12 @@ func smf014Parse(rec []byte) {
 		log.Println(err)
 	}
 
-	ucbOff := 268
-	numUcbs := int(rec[41])
-	ucbSize := int(rec[42])
+	var SMF14NTA interface{}
+	var SMFSRTEF interface{}
+	var SMFSRTEQ interface{}
 
 	for i := 0; i < numUcbs; i++ {
 		bcd2asc(rec[ucbOff+2 : ucbOff+8])
-		var SMF14NTA interface{}
-		var SMFSRTEF interface{}
-		var SMFSRTEQ interface{}
 		// Check if DASD dataset
 		if rec[38]&0x20 != 0 {
 			SMF14NTA = int(binary.BigEndian.Uint32(rec[ucbOff+20 : ucbOff+24]))
