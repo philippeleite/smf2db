@@ -9,6 +9,7 @@ import (
 )
 
 var p1Stmt014 *sql.Stmt
+var p2Stmt014 *sql.Stmt
 
 func smf014Init() {
 	sqlStmt := `
@@ -69,14 +70,14 @@ func smf014Init() {
 		SMFDEBFL   INT        NOT NULL,
 		SMFDEBOP   INT        NOT NULL,
 		SMFDEBVL   INT        NOT NULL,
-		SMFDCBBL   INT        NOT NULL,
-		SMFDSSNO   TEXT       NOT NULL,
-		SMF14TDA   INT        NOT NULL,
-		SMF14NTU   INT        NOT NULL,
-		SMF14NTR   INT        NOT NULL,
-		SMF14NER   INT        NOT NULL,
-		SMF14EDI   INT        NOT NULL,
-		SMF14FG1   INT        NOT NULL,
+		SMFDCBBL   INT        ,
+		SMFDSSNO   TEXT       ,
+		SMF14TDA   INT        ,
+		SMF14NTU   INT        ,
+		SMF14NTR   INT        ,
+		SMF14NER   INT        ,
+		SMF14EDI   INT        ,
+		SMF14FG1   INT        ,
 		SMF14OPD   DATETIME   NOT NULL
 	);
 	`
@@ -158,6 +159,48 @@ func smf014Init() {
 	if err != nil {
 		log.Printf("%q: %s\n", err, sqlStmt2)
 	}
+
+	sqlStmt3 := `
+	DROP TABLE IF EXISTS smf014_ucb;
+	CREATE TABLE smf014_ucb (
+		SMF14TME   DATETIME   NOT NULL,
+		SMF14DTE   DATETIME   NOT NULL,
+		SMFUCBDV   INT        NOT NULL,
+		SMFSRTEV   TEXT       NOT NULL,
+		SMFUCBTY   INT        NOT NULL,
+		SMFSRTES   INT        NOT NULL,
+		SMF14NEX   INT        NOT NULL,
+		SMFEXCP    INT        NOT NULL,
+		SMFSRTEF   INT        ,
+		SMFSRTEQ   INT        ,
+		SMF14NTA   INT        
+	);
+	`
+	_, err = db.Exec(sqlStmt3)
+	if err != nil {
+		log.Printf("%q: %s\n", err, sqlStmt3)
+	}
+
+	sqlStmt4 := `
+		INSERT INTO smf014_ucb
+		VALUES (
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?
+		);
+	`
+	p2Stmt014, err = db.Prepare(sqlStmt4)
+	if err != nil {
+		log.Printf("%q: %s\n", err, sqlStmt4)
+	}
 }
 
 func smf014Parse(rec []byte) {
@@ -169,30 +212,18 @@ func smf014Parse(rec []byte) {
 	bcd2asc(rec[52:60])                         // SMFTIOE5
 	bcd2asc(rec[jfcboff : jfcboff+44])          // SMFDSNM
 	bcd2asc(rec[jfcboff+0x2c : jfcboff+0x2c+8]) // SMFELNM
-	// reloc := 93 + int(rec[92])
-
-	//var acctFields strings.Builder
-	//acctFields.WriteString(" ")
-	//fieldOff := 117
-	//numFields := int(rec[116])
-	//for i := 0; i < numFields; i++ {
-	//	fieldLen := int(rec[fieldOff])
-	//	bcd2asc(rec[fieldOff+1 : fieldOff+1+fieldLen])
-	//	acctFields.WriteString(string(rec[fieldOff+1:fieldOff+1+fieldLen]) + " ")
-	//	fieldOff += fieldLen + 1
-	//}
 
 	// DCB/DEB section (Tape)
-	var SMFDCBBL int
-	var SMFDSSNO string
-	var SMF14TDA int
+	var SMFDCBBL interface{}
+	var SMFDSSNO interface{}
+	var SMF14TDA interface{}
 
 	//DCB/DEB section (DASD)
-	var SMF14NTU int
-	var SMF14NTR int
-	var SMF14NER int
-	var SMF14EDI int
-	var SMF14FG1 int
+	var SMF14NTU interface{}
+	var SMF14NTR interface{}
+	var SMF14NER interface{}
+	var SMF14EDI interface{}
+	var SMF14FG1 interface{}
 
 	// Check if DASD dataset
 	if rec[38]&0x20 != 0 {
@@ -201,12 +232,21 @@ func smf014Parse(rec []byte) {
 		SMF14NER = int(rec[260])
 		SMF14EDI = int(rec[261])
 		SMF14FG1 = int(rec[262])
+		SMFDCBBL = nil
+		SMFDSSNO = nil
+		SMF14TDA = nil
 	} else {
+		SMF14NTU = nil
+		SMF14NTR = nil
+		SMF14NER = nil
+		SMF14EDI = nil
+		SMF14FG1 = nil
 		SMFDCBBL = int(binary.BigEndian.Uint32(rec[252:256]))
 		bcd2asc(rec[256:262])
 		SMFDSSNO = string(rec[256:262])
 		SMF14TDA = int(rec[263])
 	}
+
 	_, err = p1Stmt014.Exec(
 		smftime(rec[2:6]),                        // SMF14TME
 		smfdate(rec[6:10]),                       // SMF14DTE
@@ -272,9 +312,47 @@ func smf014Parse(rec []byte) {
 		SMF14EDI,
 		SMF14FG1,
 		smfdate(rec[264:268]), // SMF14OPD
-		// Start of relocate section
 	)
 	if err != nil {
 		log.Println(err)
+	}
+
+	ucbOff := 268
+	numUcbs := int(rec[41])
+	ucbSize := int(rec[42])
+
+	for i := 0; i < numUcbs; i++ {
+		bcd2asc(rec[ucbOff+2 : ucbOff+8])
+		var SMF14NTA interface{}
+		var SMFSRTEF interface{}
+		var SMFSRTEQ interface{}
+		// Check if DASD dataset
+		if rec[38]&0x20 != 0 {
+			SMF14NTA = int(binary.BigEndian.Uint32(rec[ucbOff+20 : ucbOff+24]))
+			SMFSRTEF = nil
+			SMFSRTEQ = nil
+		} else {
+			SMF14NTA = nil
+			SMFSRTEF = int(binary.BigEndian.Uint16(rec[ucbOff+20 : ucbOff+22]))
+			SMFSRTEQ = int(binary.BigEndian.Uint16(rec[ucbOff+22 : ucbOff+24]))
+		}
+
+		_, err = p2Stmt014.Exec(
+			smftime(rec[2:6]),  // SMF4TME
+			smfdate(rec[6:10]), // SMF4DTE
+			int(binary.BigEndian.Uint16(rec[ucbOff+0:ucbOff+2])),   // SMFUCBDV
+			string(rec[ucbOff+2:ucbOff+8]),                         // SMFSRTEV
+			int(binary.BigEndian.Uint32(rec[ucbOff+8:ucbOff+12])),  // SMFUCBTY
+			int(rec[ucbOff+12]),                                    // SMFSRTES
+			int(rec[ucbOff+13]),                                    // SMF14NEX
+			int(binary.BigEndian.Uint32(rec[ucbOff+16:ucbOff+20])), // SMFEXCP
+			SMFSRTEF,
+			SMFSRTEQ,
+			SMF14NTA,
+		)
+		if err != nil {
+			log.Println(err)
+		}
+		ucbOff += ucbSize
 	}
 }

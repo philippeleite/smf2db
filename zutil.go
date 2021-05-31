@@ -115,3 +115,9 @@ func asc2bcd(str []byte) {
 		str[i] = table[str[i]&0xff]
 	}
 }
+
+func b3toInt(s []byte) int {
+	var t = make([]byte, 4)
+	copy(t[1:], s)
+	return int(binary.BigEndian.Uint32(t))
+}
