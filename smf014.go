@@ -205,8 +205,11 @@ func smf014Init() {
 
 func smf014Parse(rec []byte) {
 
-	jfcboff := 64
-	ucbOff := 268
+	const (
+		JFCBOFF = 64
+		UCBOFF  = 268
+	)
+
 	numUcbs := int(rec[41])
 	ucbSize := int(rec[42])
 
@@ -214,8 +217,8 @@ func smf014Parse(rec []byte) {
 	bcd2asc(rec[14:22])                         // SMF14JBN
 	bcd2asc(rec[30:38])                         // SMF14UID
 	bcd2asc(rec[52:60])                         // SMFTIOE5
-	bcd2asc(rec[jfcboff : jfcboff+44])          // SMFDSNM
-	bcd2asc(rec[jfcboff+0x2c : jfcboff+0x2c+8]) // SMFELNM
+	bcd2asc(rec[JFCBOFF : JFCBOFF+44])          // SMFDSNM
+	bcd2asc(rec[JFCBOFF+0x2c : JFCBOFF+0x2c+8]) // SMFELNM
 
 	// DCB/DEB section (Tape)
 	var SMFDCBBL interface{}
@@ -272,33 +275,33 @@ func smf014Parse(rec []byte) {
 		string(rec[52:60]),                       // SMFTIOE5
 		b3toInt(rec[60:63]),                      // SMFTIOE6
 		int(rec[63]),                             // SMFTIOE7
-		string(rec[jfcboff:jfcboff+44]),          // JFCBDSNM
-		string(rec[jfcboff+0x2c:jfcboff+0x2c+8]),                       // JFCBELNM
-		int(rec[jfcboff+0x34]),                                         // JFCBTSDM
-		b3toInt(rec[jfcboff+0x35:jfcboff+0x35+3]),                      // JFCBDSCB
-		int(binary.BigEndian.Uint16(rec[jfcboff+0x3a:jfcboff+0x3a+2])), // JFCAMSTR
-		int(binary.BigEndian.Uint16(rec[jfcboff+0x3c:jfcboff+0x3c+2])), // JFCBADBF
-		int(binary.BigEndian.Uint16(rec[jfcboff+0x3e:jfcboff+0x3e+2])), // JFCNLREC
-		int(rec[jfcboff+0x40]),                                         // JFCTDSI1
-		int(rec[jfcboff+0x41]),                                         // JFCTDSI2
-		int(rec[jfcboff+0x42]),                                         // JFCBLTYP
-		int(binary.BigEndian.Uint16(rec[jfcboff+0x44:jfcboff+0x44+2])), // JFCBFLSQ
-		int(binary.BigEndian.Uint16(rec[jfcboff+0x46:jfcboff+0x46+2])), // JFCBVLSQ
-		int(rec[jfcboff+0x4d]),                                         // JFCBFLG1
-		int(rec[jfcboff+0x4e]),                                         // JFCBFLG2
-		filedate(rec[jfcboff+0x50:jfcboff+0x50+3]),                     // JFCBCRDT
-		filedate(rec[jfcboff+0x53:jfcboff+0x53+3]),                     // JFCBXPDT
-		int(rec[jfcboff+0x56]),                                         // JFCBIND1
-		int(rec[jfcboff+0x57]),                                         // JFCBIND2
-		int(rec[jfcboff+0x62]),                                         // JFCDSRG1
-		int(rec[jfcboff+0x63]),                                         // JFCDSRG2
-		int(rec[jfcboff+0x64]),                                         // JFCRECFM
-		int(binary.BigEndian.Uint16(rec[jfcboff+0x66:jfcboff+0x66+2])), // JFCBLKSI
-		int(binary.BigEndian.Uint16(rec[jfcboff+0x68:jfcboff+0x68+2])), // JFCLRECL
-		b3toInt(rec[jfcboff+0x98:jfcboff+0x98+3]),                      // JFCBPQTY
-		int(rec[jfcboff+0x9B]),                                         // JFCBCTRI
-		b3toInt(rec[jfcboff+0x9c:jfcboff+0x9c+3]),                      // JFCBSQTY
-		b3toInt(rec[jfcboff+0xa0:jfcboff+0xa0+3]),                      // JFCBDQTY
+		string(rec[JFCBOFF:JFCBOFF+44]),          // JFCBDSNM
+		string(rec[JFCBOFF+0x2c:JFCBOFF+0x2c+8]),                       // JFCBELNM
+		int(rec[JFCBOFF+0x34]),                                         // JFCBTSDM
+		b3toInt(rec[JFCBOFF+0x35:JFCBOFF+0x35+3]),                      // JFCBDSCB
+		int(binary.BigEndian.Uint16(rec[JFCBOFF+0x3a:JFCBOFF+0x3a+2])), // JFCAMSTR
+		int(binary.BigEndian.Uint16(rec[JFCBOFF+0x3c:JFCBOFF+0x3c+2])), // JFCBADBF
+		int(binary.BigEndian.Uint16(rec[JFCBOFF+0x3e:JFCBOFF+0x3e+2])), // JFCNLREC
+		int(rec[JFCBOFF+0x40]),                                         // JFCTDSI1
+		int(rec[JFCBOFF+0x41]),                                         // JFCTDSI2
+		int(rec[JFCBOFF+0x42]),                                         // JFCBLTYP
+		int(binary.BigEndian.Uint16(rec[JFCBOFF+0x44:JFCBOFF+0x44+2])), // JFCBFLSQ
+		int(binary.BigEndian.Uint16(rec[JFCBOFF+0x46:JFCBOFF+0x46+2])), // JFCBVLSQ
+		int(rec[JFCBOFF+0x4d]),                                         // JFCBFLG1
+		int(rec[JFCBOFF+0x4e]),                                         // JFCBFLG2
+		filedate(rec[JFCBOFF+0x50:JFCBOFF+0x50+3]),                     // JFCBCRDT
+		filedate(rec[JFCBOFF+0x53:JFCBOFF+0x53+3]),                     // JFCBXPDT
+		int(rec[JFCBOFF+0x56]),                                         // JFCBIND1
+		int(rec[JFCBOFF+0x57]),                                         // JFCBIND2
+		int(rec[JFCBOFF+0x62]),                                         // JFCDSRG1
+		int(rec[JFCBOFF+0x63]),                                         // JFCDSRG2
+		int(rec[JFCBOFF+0x64]),                                         // JFCRECFM
+		int(binary.BigEndian.Uint16(rec[JFCBOFF+0x66:JFCBOFF+0x66+2])), // JFCBLKSI
+		int(binary.BigEndian.Uint16(rec[JFCBOFF+0x68:JFCBOFF+0x68+2])), // JFCLRECL
+		b3toInt(rec[JFCBOFF+0x98:JFCBOFF+0x98+3]),                      // JFCBPQTY
+		int(rec[JFCBOFF+0x9B]),                                         // JFCBCTRI
+		b3toInt(rec[JFCBOFF+0x9c:JFCBOFF+0x9c+3]),                      // JFCBSQTY
+		b3toInt(rec[JFCBOFF+0xa0:JFCBOFF+0xa0+3]),                      // JFCBDQTY
 		int(binary.BigEndian.Uint16(rec[240:242])),                     // SMFDCBOR
 		int(rec[242]), // SMFDCBRF
 		int(binary.BigEndian.Uint16(rec[243:245])), // SMFDCBMF
@@ -325,28 +328,29 @@ func smf014Parse(rec []byte) {
 	var SMFSRTEF interface{}
 	var SMFSRTEQ interface{}
 
+	tempOff := UCBOFF
 	for i := 0; i < numUcbs; i++ {
-		bcd2asc(rec[ucbOff+2 : ucbOff+8])
+		bcd2asc(rec[tempOff+2 : tempOff+8])
 		// Check if DASD dataset
 		if rec[38]&0x20 != 0 {
-			SMF14NTA = int(binary.BigEndian.Uint32(rec[ucbOff+20 : ucbOff+24]))
+			SMF14NTA = int(binary.BigEndian.Uint32(rec[tempOff+20 : tempOff+24]))
 			SMFSRTEF = nil
 			SMFSRTEQ = nil
 		} else {
 			SMF14NTA = nil
-			SMFSRTEF = int(binary.BigEndian.Uint16(rec[ucbOff+20 : ucbOff+22]))
-			SMFSRTEQ = int(binary.BigEndian.Uint16(rec[ucbOff+22 : ucbOff+24]))
+			SMFSRTEF = int(binary.BigEndian.Uint16(rec[tempOff+20 : tempOff+22]))
+			SMFSRTEQ = int(binary.BigEndian.Uint16(rec[tempOff+22 : tempOff+24]))
 		}
 
 		_, err = p2Stmt014.Exec(
 			smftime(rec[2:6]),  // SMF4TME
 			smfdate(rec[6:10]), // SMF4DTE
-			int(binary.BigEndian.Uint16(rec[ucbOff+0:ucbOff+2])),   // SMFUCBDV
-			string(rec[ucbOff+2:ucbOff+8]),                         // SMFSRTEV
-			int(binary.BigEndian.Uint32(rec[ucbOff+8:ucbOff+12])),  // SMFUCBTY
-			int(rec[ucbOff+12]),                                    // SMFSRTES
-			int(rec[ucbOff+13]),                                    // SMF14NEX
-			int(binary.BigEndian.Uint32(rec[ucbOff+16:ucbOff+20])), // SMFEXCP
+			int(binary.BigEndian.Uint16(rec[tempOff+0:tempOff+2])),   // SMFUCBDV
+			string(rec[tempOff+2:tempOff+8]),                         // SMFSRTEV
+			int(binary.BigEndian.Uint32(rec[tempOff+8:tempOff+12])),  // SMFUCBTY
+			int(rec[tempOff+12]),                                     // SMFSRTES
+			int(rec[tempOff+13]),                                     // SMF14NEX
+			int(binary.BigEndian.Uint32(rec[tempOff+16:tempOff+20])), // SMFEXCP
 			SMFSRTEF,
 			SMFSRTEQ,
 			SMF14NTA,
@@ -354,6 +358,6 @@ func smf014Parse(rec []byte) {
 		if err != nil {
 			log.Println(err)
 		}
-		ucbOff += ucbSize
+		tempOff += ucbSize
 	}
 }
