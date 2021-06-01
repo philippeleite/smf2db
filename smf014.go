@@ -254,6 +254,45 @@ func smf014Parse(rec []byte) {
 		SMF14TDA = int(rec[263])
 	}
 
+	var hipSize int
+	if rec[39]&0x08 != 0 {
+		hipSize = 20
+	}
+	extOff := UCBOFF + hipSize + (numUcbs * ucbSize)
+	extSize := int(binary.BigEndian.Uint16(rec[extOff : extOff+2]))
+
+	var SMF14XF1 interface{} = nil
+	var SMF14CDL interface{} = nil
+	var SMF14UDL interface{} = nil
+	var SMF14CDS interface{} = nil
+	var SMF14UDS interface{} = nil
+	var SMF14CIS interface{} = nil
+	var SMF14TKL interface{} = nil
+	var SMF14TKN interface{} = nil
+	var SMF14CMPTYPE interface{} = nil
+
+	secOff := extOff + 2
+	for secOff < extOff+extSize {
+		secSize := int(binary.BigEndian.Uint16(rec[secOff : secOff+2]))
+		secType := int(rec[secOff+3])
+		switch secType {
+		case 1:
+			SMF14XF1 = int(rec[secOff+4])
+			SMF14CDL = int(binary.BigEndian.Uint64(rec[secOff+6 : secOff+14]))
+			SMF14UDL = int(binary.BigEndian.Uint64(rec[secOff+14 : secOff+22]))
+			SMF14CDS = int(binary.BigEndian.Uint64(rec[secOff+22 : secOff+30]))
+			SMF14UDS = int(binary.BigEndian.Uint64(rec[secOff+30 : secOff+38]))
+			SMF14CIS = int(binary.BigEndian.Uint32(rec[secOff+38 : secOff+42]))
+			SMF14TKL = int(binary.BigEndian.Uint16(rec[secOff+42 : secOff+44]))
+			SMF14TKN = rec[secOff+44 : secOff+80]
+			SMF14CMPTYPE = int(rec[secOff+80])
+		case 2:
+		case 3:
+
+		}
+		secOff += secSize
+	}
+
 	_, err = p1Stmt014.Exec(
 		smftime(rec[2:6]),                        // SMF14TME
 		smfdate(rec[6:10]),                       // SMF14DTE
