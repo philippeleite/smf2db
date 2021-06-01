@@ -6,6 +6,7 @@ var parseTable = map[int]func([]byte){
 	14: smf014Parse,
 	15: smf015Parse,
 	17: smf017Parse,
+	18: smf018Parse,
 }
 
 func smfInit() {
@@ -14,6 +15,7 @@ func smfInit() {
 	smf014Init()
 	smf015Init()
 	smf017Init()
+	smf018Init()
 }
 
 func smfParse(rec []byte) {
