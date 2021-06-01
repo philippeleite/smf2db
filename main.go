@@ -43,7 +43,8 @@ func init() {
 }
 
 func main() {
-	file, err := os.Open("smftest.rdw")
+	file, err := os.Open("testdata/smftest.rdw")
+	//file, err := os.Open("testdata/safrasmf")
 	handleErr(err)
 	defer func() {
 		err = file.Close()

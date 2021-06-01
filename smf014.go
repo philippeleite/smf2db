@@ -112,8 +112,15 @@ func smf014Init() {
 		SMF14KL1   TEXT       ,        
 		SMF12CD1   TEXT       ,        
 		SMF14KL2   TEXT       ,        
-		SMF12CD2   TEXT       ,        
-		SMF14KET   INT                
+		SMF14CD2   TEXT       ,        
+		SMF14KET   INT        ,        
+		SMF14RFG0  INT        ,        
+		SMF14RFG1  INT        ,        
+		SMF14RASDATA0 INT     ,        
+		SMF14RASDATA1 INT     ,
+		SMF14DEF   INT        ,
+		SMF14DET   INT        ,        
+		SMF14DKL   INT                
 	);
 	`
 	_, err := db.Exec(sqlStmt)
@@ -124,6 +131,13 @@ func smf014Init() {
 	sqlStmt2 := `
 		INSERT INTO smf014
 		VALUES (
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
 			?,
 			?,
 			?,
@@ -373,6 +387,15 @@ func smf014Parse(rec []byte) {
 	var SMF14KL2 interface{} = nil
 	var SMF14CD2 interface{} = nil
 	var SMF14KET interface{} = nil
+	// RAS section
+	var SMF14RFG0 interface{} = nil
+	var SMF14RFG1 interface{} = nil
+	var SMF14RASDATA0 interface{} = nil
+	var SMF14RASDATA1 interface{} = nil
+	// DASD dataset encryption section
+	var SMF14DEF interface{} = nil
+	var SMF14DET interface{} = nil
+	var SMF14DKL interface{} = nil
 
 	secOff := extOff + 2
 	for secOff < extOff+extSize {
@@ -441,6 +464,20 @@ func smf014Parse(rec []byte) {
 			bcd2asc(rec[secOff+133 : secOff+134])
 			SMF14CD2 = string(rec[secOff+133 : secOff+134])
 			SMF14KET = int(binary.BigEndian.Uint32(rec[secOff+134 : secOff+138]))
+		case 8:
+			SMF14RFG0 = int(rec[secOff+4])
+			SMF14RFG1 = int(rec[secOff+5])
+			if rec[secOff+4]&0x80 != 0 {
+				SMF14RASDATA0 = int(rec[secOff+8])
+			}
+			if rec[secOff+4]&0x40 != 0 {
+				SMF14RASDATA1 = int(rec[secOff+9])
+			}
+		case 9:
+			SMF14DEF = int(rec[secOff+4])
+			SMF14DET = int(binary.BigEndian.Uint16(rec[secOff+5 : secOff+7]))
+			bcd2asc(rec[secOff+7 : secOff+71])
+			SMF14DKL = string(rec[secOff+7 : secOff+71])
 		}
 		secOff += secSize
 	}
@@ -545,6 +582,13 @@ func smf014Parse(rec []byte) {
 		SMF14KL2,
 		SMF14CD2,
 		SMF14KET,
+		SMF14RFG0,
+		SMF14RFG1,
+		SMF14RASDATA0,
+		SMF14RASDATA1,
+		SMF14DEF,
+		SMF14DET,
+		SMF14DKL,
 	)
 	if err != nil {
 		log.Println(err)
