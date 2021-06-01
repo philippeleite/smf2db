@@ -78,7 +78,42 @@ func smf014Init() {
 		SMF14NER   INT        ,
 		SMF14EDI   INT        ,
 		SMF14FG1   INT        ,
-		SMF14OPD   DATETIME   NOT NULL
+		SMF14OPD   DATETIME   NOT NULL,
+		SMF14XF1   INT        ,
+		SMF14CDL   INT        ,
+		SMF14UDL   INT        ,
+		SMF14CDS   INT        ,
+		SMF14UDS   INT        ,
+		SMF14CIS   INT        ,
+		SMF14TKL   INT        ,
+		SMF14TKN   BLOB       ,
+		SMF14CMPTYPE INT      ,
+		SMF14MCN   TEXT       ,
+		SMF14DCN   TEXT       ,
+		SMF14SCN   TEXT       ,
+		SMF14SPN   TEXT       ,
+		SMF14PGN   TEXT       ,
+		SMF14CFG   INT        ,
+		SMF14USR   INT        ,
+		SMF14TPE   INT        ,
+		SMF14LBL   INT        ,
+		SMF14LBS   INT        ,        
+		SMF14FLG1  INT        ,        
+		SMF14DSVER INT        ,        
+		SMF14ALI   TEXT       ,
+		SMF14DRD   INT        ,        
+		SMF14DRDH  INT        ,        
+		SMF14MRD   INT        ,        
+		SMF14MRDH  INT        ,        
+		SMF14MCE   INT        ,        
+		SMF14MST   INT        ,        
+		SMF14MNC   INT        ,        
+		SMF14MCF   INT        ,
+		SMF14KL1   TEXT       ,        
+		SMF12CD1   TEXT       ,        
+		SMF14KL2   TEXT       ,        
+		SMF12CD2   TEXT       ,        
+		SMF14KET   INT                
 	);
 	`
 	_, err := db.Exec(sqlStmt)
@@ -89,6 +124,41 @@ func smf014Init() {
 	sqlStmt2 := `
 		INSERT INTO smf014
 		VALUES (
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
 			?,
 			?,
 			?,
@@ -258,9 +328,10 @@ func smf014Parse(rec []byte) {
 	if rec[39]&0x08 != 0 {
 		hipSize = 20
 	}
-	extOff := UCBOFF + hipSize + (numUcbs * ucbSize)
+	extOff := UCBOFF + (numUcbs * ucbSize) + hipSize
 	extSize := int(binary.BigEndian.Uint16(rec[extOff : extOff+2]))
 
+	// Compressed format dataset section
 	var SMF14XF1 interface{} = nil
 	var SMF14CDL interface{} = nil
 	var SMF14UDL interface{} = nil
@@ -270,6 +341,38 @@ func smf014Parse(rec []byte) {
 	var SMF14TKL interface{} = nil
 	var SMF14TKN interface{} = nil
 	var SMF14CMPTYPE interface{} = nil
+	// SMS section
+	var SMF14MCN interface{} = nil
+	var SMF14DCN interface{} = nil
+	var SMF14SCN interface{} = nil
+	// Step information section
+	var SMF14SPN interface{} = nil
+	var SMF14PGN interface{} = nil
+	// ISO/ANSI information section
+	var SMF14CFG interface{} = nil
+	var SMF14USR interface{} = nil
+	var SMF14TPE interface{} = nil
+	var SMF14LBL interface{} = nil
+	// Additional information section
+	var SMF14LBS interface{} = nil
+	var SMF14FLG1 interface{} = nil
+	var SMF14DSVER interface{} = nil
+	var SMF14ALI interface{} = nil
+	// PDSE statistics section
+	var SMF14DRD interface{} = nil
+	var SMF14DRDH interface{} = nil
+	var SMF14MRD interface{} = nil
+	var SMF14MRDH interface{} = nil
+	var SMF14MCE interface{} = nil
+	var SMF14MST interface{} = nil
+	var SMF14MNC interface{} = nil
+	var SMF14MCF interface{} = nil
+	// Tape encryption data section
+	var SMF14KL1 interface{} = nil
+	var SMF14CD1 interface{} = nil
+	var SMF14KL2 interface{} = nil
+	var SMF14CD2 interface{} = nil
+	var SMF14KET interface{} = nil
 
 	secOff := extOff + 2
 	for secOff < extOff+extSize {
@@ -285,10 +388,59 @@ func smf014Parse(rec []byte) {
 			SMF14CIS = int(binary.BigEndian.Uint32(rec[secOff+38 : secOff+42]))
 			SMF14TKL = int(binary.BigEndian.Uint16(rec[secOff+42 : secOff+44]))
 			SMF14TKN = rec[secOff+44 : secOff+80]
-			SMF14CMPTYPE = int(rec[secOff+80])
+			if secOff+80 < secOff+secSize {
+				SMF14CMPTYPE = int(rec[secOff+80])
+			}
 		case 2:
+			bcd2asc(rec[secOff+4 : secOff+12])
+			SMF14MCN = string(rec[secOff+4 : secOff+12])
+			bcd2asc(rec[secOff+12 : secOff+20])
+			SMF14DCN = string(rec[secOff+12 : secOff+20])
+			bcd2asc(rec[secOff+20 : secOff+28])
+			SMF14SCN = string(rec[secOff+20 : secOff+28])
 		case 3:
-
+			bcd2asc(rec[secOff+4 : secOff+12])
+			SMF14SPN = string(rec[secOff+4 : secOff+12])
+			bcd2asc(rec[secOff+12 : secOff+20])
+			SMF14PGN = string(rec[secOff+12 : secOff+20])
+		case 4:
+			SMF14CFG = int(rec[secOff+4])
+			SMF14USR = int(binary.BigEndian.Uint32(rec[secOff+5 : secOff+9]))
+			SMF14TPE = int(binary.BigEndian.Uint32(rec[secOff+9 : secOff+13]))
+			SMF14LBL = int(binary.BigEndian.Uint32(rec[secOff+13 : secOff+17]))
+		case 5:
+			if rec[secOff+4]&0x80 != 0 {
+				SMF14LBS = int(binary.BigEndian.Uint64(rec[secOff+6 : secOff+14]))
+			}
+			if rec[secOff+4]&0x40 != 0 {
+				SMF14FLG1 = int(rec[secOff+14])
+			}
+			if rec[secOff+4]&0x20 != 0 {
+				SMF14DSVER = int(rec[secOff+16])
+			}
+			if rec[secOff+4]&0x10 != 0 {
+				bcd2asc(rec[secOff+17 : secOff+61])
+				SMF14ALI = string(rec[secOff+17 : secOff+61])
+			}
+		case 6:
+			SMF14DRD = int(binary.BigEndian.Uint32(rec[secOff+4 : secOff+8]))
+			SMF14DRDH = int(binary.BigEndian.Uint32(rec[secOff+8 : secOff+12]))
+			SMF14MRD = int(binary.BigEndian.Uint32(rec[secOff+12 : secOff+16]))
+			SMF14MRDH = int(binary.BigEndian.Uint32(rec[secOff+16 : secOff+20]))
+			SMF14MCE = int(binary.BigEndian.Uint32(rec[secOff+20 : secOff+24]))
+			SMF14MST = int(binary.BigEndian.Uint32(rec[secOff+24 : secOff+28]))
+			SMF14MNC = int(binary.BigEndian.Uint32(rec[secOff+28 : secOff+32]))
+			SMF14MCF = int(binary.BigEndian.Uint32(rec[secOff+32 : secOff+36]))
+		case 7:
+			bcd2asc(rec[secOff+4 : secOff+68])
+			SMF14KL1 = string(rec[secOff+4 : secOff+68])
+			bcd2asc(rec[secOff+68 : secOff+69])
+			SMF14CD1 = string(rec[secOff+68 : secOff+69])
+			bcd2asc(rec[secOff+69 : secOff+133])
+			SMF14KL2 = string(rec[secOff+69 : secOff+133])
+			bcd2asc(rec[secOff+133 : secOff+134])
+			SMF14CD2 = string(rec[secOff+133 : secOff+134])
+			SMF14KET = int(binary.BigEndian.Uint32(rec[secOff+134 : secOff+138]))
 		}
 		secOff += secSize
 	}
@@ -358,6 +510,41 @@ func smf014Parse(rec []byte) {
 		SMF14EDI,
 		SMF14FG1,
 		smfdate(rec[264:268]), // SMF14OPD
+		SMF14XF1,
+		SMF14CDL,
+		SMF14UDL,
+		SMF14CDS,
+		SMF14UDS,
+		SMF14CIS,
+		SMF14TKL,
+		SMF14TKN,
+		SMF14CMPTYPE,
+		SMF14MCN,
+		SMF14DCN,
+		SMF14SCN,
+		SMF14SPN,
+		SMF14PGN,
+		SMF14CFG,
+		SMF14USR,
+		SMF14TPE,
+		SMF14LBL,
+		SMF14LBS,
+		SMF14FLG1,
+		SMF14DSVER,
+		SMF14ALI,
+		SMF14DRD,
+		SMF14DRDH,
+		SMF14MRD,
+		SMF14MRDH,
+		SMF14MCE,
+		SMF14MST,
+		SMF14MNC,
+		SMF14MCF,
+		SMF14KL1,
+		SMF14CD1,
+		SMF14KL2,
+		SMF14CD2,
+		SMF14KET,
 	)
 	if err != nil {
 		log.Println(err)
