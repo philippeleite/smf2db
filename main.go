@@ -39,7 +39,7 @@ func init() {
 	handleErr(err)
 	_, err = db.Exec("PRAGMA auto_vacuum = NONE ;")
 	handleErr(err)
-	smfInit()
+	//smfInit()
 }
 
 func main() {

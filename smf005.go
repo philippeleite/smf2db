@@ -6,9 +6,11 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"log"
 	"strings"
+	"sync"
 )
 
 var pStmt005 *sql.Stmt
+var once005 sync.Once
 
 func smf005Init() {
 	sqlStmt := `
@@ -95,6 +97,7 @@ func smf005Init() {
 }
 
 func smf005Parse(rec []byte) {
+	once005.Do(smf005Init)
 
 	bcd2asc(rec[10:14])  // SMF5SID
 	bcd2asc(rec[14:22])  // SMF5JBN

@@ -4,10 +4,12 @@ import (
 	"database/sql"
 	_ "github.com/mattn/go-sqlite3"
 	"log"
+	"sync"
 )
 
 var p1Stmt017 *sql.Stmt
 var p2Stmt017 *sql.Stmt
+var once017 sync.Once
 
 func smf017Init() {
 	sqlStmt := `
@@ -75,6 +77,7 @@ func smf017Init() {
 }
 
 func smf017Parse(rec []byte) {
+	once017.Do(smf017Init)
 
 	bcd2asc(rec[10:14]) // SMF17SID
 	bcd2asc(rec[14:22]) // SMF17JBN

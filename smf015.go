@@ -5,11 +5,13 @@ import (
 	"encoding/binary"
 	_ "github.com/mattn/go-sqlite3"
 	"log"
+	"sync"
 	//"strings"
 )
 
 var p1Stmt015 *sql.Stmt
 var p2Stmt015 *sql.Stmt
+var once015 sync.Once
 
 func smf015Init() {
 	sqlStmt := `
@@ -288,6 +290,7 @@ func smf015Init() {
 }
 
 func smf015Parse(rec []byte) {
+	once015.Do(smf015Init)
 
 	const (
 		JFCBOFF = 64

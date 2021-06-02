@@ -7,6 +7,9 @@ import (
 )
 
 func smfdate(sdate []byte) string {
+	if bytes.Equal(sdate, []byte{0x00, 0x00, 0x00, 0x00}) {
+		return "0000-00-00 00:00:00.000"
+	}
 	var monthDays = []int{31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31}
 	dayOfYear := int((sdate[3] >> 4) +
 		((sdate[2] & 0x0f) * 10) +
@@ -61,6 +64,9 @@ func divmod(numerator, denominator int) (quotient, remainder int) {
 }
 
 func smftime(stime []byte) string {
+	if bytes.Equal(stime, []byte{0x00, 0x00, 0x00, 0x00}) {
+		return "0000-00-00 00:00:00.000"
+	}
 	ttime := binary.BigEndian.Uint32(stime)
 	dv1quot, dv1rem := divmod(int(ttime), 360_000)
 	dv2quot, dv2rem := divmod(dv1rem, 6_000)
