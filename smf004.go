@@ -12,11 +12,13 @@ import (
 var p1Stmt004 *sql.Stmt
 var p2Stmt004 *sql.Stmt
 var once004 sync.Once
+var count004 int
 
 func smf004Init() {
 	sqlStmt := `
 	DROP TABLE IF EXISTS smf004;
 	CREATE TABLE smf004 (
+	    ID         INT        NOT NULL,
 		SMF4TME    DATETIME   NOT NULL,
 		SMF4DTE    DATETIME   NOT NULL,
 		SMF4SID    TEXT       NOT NULL,
@@ -76,6 +78,7 @@ func smf004Init() {
 	sqlStmt2 := `
 	DROP TABLE IF EXISTS smf004_dev;
 	CREATE TABLE smf004_dev (
+	    ID         INT        NOT NULL,
 		SMF4TME    DATETIME   NOT NULL,
 		SMF4DTE    DATETIME   NOT NULL,
 		SMF4DEVC   INT        NOT NULL,
@@ -140,6 +143,7 @@ func smf004Init() {
 			?,
 			?,
 			?,
+			?,
 			?
 		);
 `
@@ -151,6 +155,7 @@ func smf004Init() {
 	sqlStmt4 := `
 		INSERT INTO smf004_dev
 		VALUES (
+			?,
 			?,
 			?,
 			?,
@@ -191,7 +196,9 @@ func smf004Parse(rec []byte) {
 		fieldOff += fieldLen + 1
 	}
 
+	count004 += 1
 	_, err = p1Stmt004.Exec(
+		count004,
 		smftime(rec[2:6]),                         // SMF4TME
 		smfdate(rec[6:10]),                        // SMF4DTE
 		string(rec[10:14]),                        // SMF4SID
@@ -250,6 +257,7 @@ func smf004Parse(rec []byte) {
 	devOff := 104
 	for i := 0; i < numDevs; i++ {
 		_, err = p2Stmt004.Exec(
+			count004,
 			smftime(rec[2:6]),  // SMF4TME
 			smfdate(rec[6:10]), // SMF4DTE
 			int(rec[devOff+0]), // SMF4DEVC

@@ -12,11 +12,13 @@ import (
 var p1Stmt015 *sql.Stmt
 var p2Stmt015 *sql.Stmt
 var once015 sync.Once
+var count015 int
 
 func smf015Init() {
 	sqlStmt := `
 	DROP TABLE IF EXISTS smf015;
 	CREATE TABLE smf015 (
+	    ID         INT        NOT NULL,
 		SMF15TME   DATETIME   NOT NULL,
 		SMF15DTE   DATETIME   NOT NULL,
 		SMF15SID   TEXT       NOT NULL,
@@ -238,6 +240,7 @@ func smf015Init() {
 			?,
 			?,
 			?,
+			?,
 			?
 		);
 	`
@@ -249,6 +252,7 @@ func smf015Init() {
 	sqlStmt3 := `
 	DROP TABLE IF EXISTS smf015_ucb;
 	CREATE TABLE smf015_ucb (
+	    ID         INT        NOT NULL,
 		SMF15TME   DATETIME   NOT NULL,
 		SMF15DTE   DATETIME   NOT NULL,
 		SMFUCBDV   INT        NOT NULL,
@@ -270,6 +274,7 @@ func smf015Init() {
 	sqlStmt4 := `
 		INSERT INTO smf015_ucb
 		VALUES (
+			?,
 			?,
 			?,
 			?,
@@ -485,7 +490,9 @@ func smf015Parse(rec []byte) {
 		secOff += secSize
 	}
 
+	count015 += 1
 	_, err = p1Stmt015.Exec(
+		count015,
 		smftime(rec[2:6]),                        // SMF15TME
 		smfdate(rec[6:10]),                       // SMF15DTE
 		string(rec[10:14]),                       // SMF15SID
@@ -616,6 +623,7 @@ func smf015Parse(rec []byte) {
 		}
 
 		_, err = p2Stmt015.Exec(
+			count015,
 			smftime(rec[2:6]),  // SMF4TME
 			smfdate(rec[6:10]), // SMF4DTE
 			int(binary.BigEndian.Uint16(rec[tempOff+0:tempOff+2])),   // SMFUCBDV

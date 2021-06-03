@@ -10,11 +10,13 @@ import (
 var p1Stmt018 *sql.Stmt
 var p2Stmt018 *sql.Stmt
 var once018 sync.Once
+var count018 int
 
 func smf018Init() {
 	sqlStmt := `
 	DROP TABLE IF EXISTS smf018;
 	CREATE TABLE smf018 (
+	    ID         INT        NOT NULL,
 		SMF18TME   DATETIME   NOT NULL,
 		SMF18DTE   DATETIME   NOT NULL,
 		SMF18SID   TEXT       NOT NULL,
@@ -36,6 +38,7 @@ func smf018Init() {
 	sqlStmt2 := `
 	DROP TABLE IF EXISTS smf018_vol;
 	CREATE TABLE smf018_vol (
+	    ID         INT        NOT NULL,
 		SMF18TME   DATETIME   NOT NULL,
 		SMF18DTE   DATETIME   NOT NULL,
 		SMF18FVL   TEXT       NOT NULL
@@ -59,6 +62,7 @@ func smf018Init() {
 			?,
 			?,
 			?,
+			?,
 			?
 		);
 `
@@ -70,6 +74,7 @@ func smf018Init() {
 	sqlStmt4 := `
 		INSERT INTO smf018_vol
 		VALUES (
+			?,
 			?,
 			?,
 			?
@@ -93,7 +98,9 @@ func smf018Parse(rec []byte) {
 
 	numVols := int(rec[131])
 
+	count018 += 1
 	_, err = p1Stmt018.Exec(
+		count018,
 		smftime(rec[2:6]),   // SMF18TME
 		smfdate(rec[6:10]),  // SMF18DTE
 		string(rec[10:14]),  // SMF18SID
@@ -114,6 +121,7 @@ func smf018Parse(rec []byte) {
 	for i := 0; i < numVols; i++ {
 		bcd2asc(rec[devOff+2 : devOff+8])
 		_, err = p2Stmt018.Exec(
+			count018,
 			smftime(rec[2:6]),              // SMF18TME
 			smfdate(rec[6:10]),             // SMF18DTE
 			string(rec[devOff+2:devOff+8]), // SMF18FVL

@@ -10,11 +10,13 @@ import (
 var p1Stmt017 *sql.Stmt
 var p2Stmt017 *sql.Stmt
 var once017 sync.Once
+var count017 int
 
 func smf017Init() {
 	sqlStmt := `
 	DROP TABLE IF EXISTS smf017;
 	CREATE TABLE smf017 (
+	    ID         INT        NOT NULL,
 		SMF17TME   DATETIME   NOT NULL,
 		SMF17DTE   DATETIME   NOT NULL,
 		SMF17SID   TEXT       NOT NULL,
@@ -33,6 +35,7 @@ func smf017Init() {
 	sqlStmt2 := `
 	DROP TABLE IF EXISTS smf017_vol;
 	CREATE TABLE smf017_vol (
+	    ID         INT        NOT NULL,
 		SMF17TME   DATETIME   NOT NULL,
 		SMF17DTE   DATETIME   NOT NULL,
 		SMF17FVL   TEXT       NOT NULL
@@ -53,6 +56,7 @@ func smf017Init() {
 			?,
 			?,
 			?,
+			?,
 			?
 		);
 `
@@ -64,6 +68,7 @@ func smf017Init() {
 	sqlStmt4 := `
 		INSERT INTO smf017_vol
 		VALUES (
+			?,
 			?,
 			?,
 			?
@@ -86,7 +91,9 @@ func smf017Parse(rec []byte) {
 
 	numVols := int(rec[87])
 
+	count017 += 1
 	_, err = p1Stmt017.Exec(
+		count017,
 		smftime(rec[2:6]),   // SMF17TME
 		smfdate(rec[6:10]),  // SMF17DTE
 		string(rec[10:14]),  // SMF17SID
@@ -104,6 +111,7 @@ func smf017Parse(rec []byte) {
 	for i := 0; i < numVols; i++ {
 		bcd2asc(rec[devOff+2 : devOff+8])
 		_, err = p2Stmt017.Exec(
+			count017,
 			smftime(rec[2:6]),              // SMF17TME
 			smfdate(rec[6:10]),             // SMF17DTE
 			string(rec[devOff+2:devOff+8]), // SMF17FVL

@@ -11,11 +11,13 @@ import (
 
 var pStmt005 *sql.Stmt
 var once005 sync.Once
+var count005 int
 
 func smf005Init() {
 	sqlStmt := `
 	DROP TABLE IF EXISTS smf005;
 	CREATE TABLE smf005 (
+	    ID         INT        NOT NULL,
 		SMF5TME    DATETIME   NOT NULL,
 		SMF5DTE    DATETIME   NOT NULL,
 		SMF5SID    TEXT       NOT NULL,
@@ -87,6 +89,7 @@ func smf005Init() {
 			?,
 			?,
 			?,
+			?,
 			?
 		);
 	`
@@ -116,7 +119,10 @@ func smf005Parse(rec []byte) {
 		acctFields.WriteString(string(rec[fieldOff+1:fieldOff+1+fieldLen]) + " ")
 		fieldOff += fieldLen + 1
 	}
+
+	count005 += 1
 	_, err = pStmt005.Exec(
+		count005,
 		smftime(rec[2:6]),                        // SMF5TME
 		smfdate(rec[6:10]),                       // SMF5DTE
 		string(rec[10:14]),                       // SMF5SID

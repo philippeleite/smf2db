@@ -11,6 +11,7 @@ import (
 var p1Stmt030 *sql.Stmt
 var p2Stmt030 *sql.Stmt
 var once030 sync.Once
+var count030 int
 
 type header030 struct {
 	SMF30TME string
@@ -119,14 +120,15 @@ type ident030 struct {
 	SMF30IET int
 	SMF30SSN int
 	SMF30EXN string
-	SMF30ASI int
-	SMF30COR string
+	SMF30ASI interface{}
+	SMF30COR interface{}
 }
 
 func smf030Init() {
 	sqlStmt := `
 	DROP TABLE IF EXISTS smf030;
 	CREATE TABLE smf030 (
+	    ID         INT        NOT NULL,
 		SMF30TME   DATETIME   NOT NULL,
 		SMF30DTE   DATETIME   NOT NULL,
 		SMF30SID   TEXT       NOT NULL,
@@ -166,31 +168,51 @@ func smf030Init() {
 		SMF30IET   INT        NOT NULL,
 		SMF30SSN   INT        NOT NULL,
 		SMF30EXN   TEXT       NOT NULL,
-		SMF30ASI   INT        NOT NULL,
-		SMF30COR   TEXT       NOT NULL
+		SMF30ASI   INT        ,
+		SMF30COR   TEXT       
 	);
 	`
 	_, err := db.Exec(sqlStmt)
 	if err != nil {
 		log.Printf("%q: %s\n", err, sqlStmt)
 	}
-	//
-	//sqlStmt2 := `
-	//DROP TABLE IF EXISTS smf030_vol;
-	//CREATE TABLE smf030_vol (
-	//	SMF30TME   DATETIME   NOT NULL,
-	//	SMF30DTE   DATETIME   NOT NULL,
-	//	SMF30FVL   TEXT       NOT NULL
-	//);
-	//`
-	//_, err = db.Exec(sqlStmt2)
-	//if err != nil {
-	//	log.Printf("%q: %s\n", err, sqlStmt2)
-	//}
+
+	sqlStmt2 := `
+	DROP TABLE IF EXISTS smf030_ioac;
+	CREATE TABLE smf030_ioac (
+	    ID         INT        NOT NULL,
+		SMF30TME   DATETIME   NOT NULL,
+		SMF30DTE   DATETIME   NOT NULL,
+		SMF30INP   INT        NOT NULL,
+		SMF30TEP   INT        NOT NULL,
+		SMF30TPT   INT        NOT NULL,
+		SMF30TGT   INT        NOT NULL,
+		SMF30RDR   INT        NOT NULL,
+		SMF30RDT   INT        NOT NULL,
+		SMF30TCN   INT        NOT NULL,
+		SMF30DCF   INT        NOT NULL,
+		SMF30TRR   INT        NOT NULL,
+		SMF30AIC   INT        NOT NULL,
+		SMF30AID   INT        NOT NULL,
+		SMF30AIW   INT        NOT NULL,
+		SMF30AIS   INT        NOT NULL,
+		SMF30EIC   INT        NOT NULL,
+		SMF30EID   INT        NOT NULL,
+		SMF30EIW   INT        NOT NULL,
+		SMF30EIS   INT        NOT NULL,
+		SMF30TEX   INT        NOT NULL,
+		SMF30DAS   INT        NOT NULL
+	);
+	`
+	_, err = db.Exec(sqlStmt2)
+	if err != nil {
+		log.Printf("%q: %s\n", err, sqlStmt2)
+	}
 
 	sqlStmt3 := `
 		INSERT INTO smf030
 		VALUES (
+			?,
 			?,
 			?,
 			?,
@@ -238,20 +260,39 @@ func smf030Init() {
 	if err != nil {
 		log.Printf("%q: %s\n", err, sqlStmt3)
 	}
-	//
-	//	sqlStmt4 := `
-	//		INSERT INTO smf030_vol
-	//		VALUES (
-	//			?,
-	//			?,
-	//			?
-	//		);
-	//`
-	//
-	//	p2Stmt030, err = db.Prepare(sqlStmt4)
-	//	if err != nil {
-	//		log.Printf("%q: %s\n", err, sqlStmt4)
-	//	}
+
+	sqlStmt4 := `
+		INSERT INTO smf030_ioac
+		VALUES (
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?
+		);
+	`
+
+	p2Stmt030, err = db.Prepare(sqlStmt4)
+	if err != nil {
+		log.Printf("%q: %s\n", err, sqlStmt4)
+	}
 }
 
 func (hdr *header030) IsFirst() bool {
@@ -359,12 +400,24 @@ func smf030Parse(rec []byte) {
 	header.SMF30MLN = int(binary.BigEndian.Uint16(rec[164:166])) // SMF30MLN
 	header.SMF30MNO = int(binary.BigEndian.Uint16(rec[166:168])) // SMF30MNO
 	header.SMF30MOS = int(binary.BigEndian.Uint32(rec[168:172])) // SMF30MOS
-	header.SMF30CDO = int(binary.BigEndian.Uint32(rec[172:176])) // SMF30CDO
-	header.SMF30CDL = int(binary.BigEndian.Uint16(rec[176:178])) // SMF30CDL
-	header.SMF30CDN = int(binary.BigEndian.Uint16(rec[178:180])) // SMF30CDN
-	header.SMF30USO = int(binary.BigEndian.Uint32(rec[180:184])) // SMF30USO
-	header.SMF30USL = int(binary.BigEndian.Uint16(rec[184:186])) // SMF30USL
-	header.SMF30USN = int(binary.BigEndian.Uint16(rec[186:188])) // SMF30USN
+	if 172 < header.SMF30SOF-4 {
+		header.SMF30CDO = int(binary.BigEndian.Uint32(rec[172:176])) // SMF30CDO
+		header.SMF30CDL = int(binary.BigEndian.Uint16(rec[176:178])) // SMF30CDL
+		header.SMF30CDN = int(binary.BigEndian.Uint16(rec[178:180])) // SMF30CDN
+	} else {
+		header.SMF30CDO = 0
+		header.SMF30CDL = 0
+		header.SMF30CDN = 0
+	}
+	if 180 < header.SMF30SOF-4 {
+		header.SMF30USO = int(binary.BigEndian.Uint32(rec[180:184])) // SMF30USO
+		header.SMF30USL = int(binary.BigEndian.Uint16(rec[184:186])) // SMF30USL
+		header.SMF30USN = int(binary.BigEndian.Uint16(rec[186:188])) // SMF30USN
+	} else {
+		header.SMF30USO = 0
+		header.SMF30USL = 0
+		header.SMF30USN = 0
+	}
 	// numVols := int(rec[131])
 	isFirst := header.IsFirst()
 	isAdd := header.IsAdditional()
@@ -434,10 +487,20 @@ func smf030Parse(rec []byte) {
 	ident.SMF30IET = int(binary.BigEndian.Uint64(rec[idOff+156 : idOff+164])) // SMF30IET
 	ident.SMF30SSN = int(binary.BigEndian.Uint32(rec[idOff+164 : idOff+168])) // SMF30SSN
 	ident.SMF30EXN = string(rec[idOff+168 : idOff+184])                       // SMF30EXN
-	ident.SMF30ASI = int(binary.BigEndian.Uint16(rec[idOff+184 : idOff+186])) // SMF30ASI
-	ident.SMF30COR = string(rec[idOff+186 : idOff+250])                       // SMF30COR
+	if 184 < header.SMF30ILN {
+		ident.SMF30ASI = int(binary.BigEndian.Uint16(rec[idOff+184 : idOff+186])) // SMF30ASI
+	} else {
+		ident.SMF30ASI = nil
+	}
+	if 186 < header.SMF30ILN {
+		ident.SMF30COR = string(rec[idOff+186 : idOff+250]) // SMF30COR
+	} else {
+		ident.SMF30COR = nil
+	}
 
+	count030 += 1
 	_, err = p1Stmt030.Exec(
+		count030,
 		header.SMF30TME,
 		header.SMF30DTE,
 		header.SMF30SID,
@@ -484,18 +547,36 @@ func smf030Parse(rec []byte) {
 	if err != nil {
 		log.Println(err)
 	}
-	//
-	//devOff := 132
-	//for i := 0; i < numVols; i++ {
-	//	bcd2asc(rec[devOff+2 : devOff+8])
-	//	_, err = p2Stmt030.Exec(
-	//		smftime(rec[2:6]),              // SMF30TME
-	//		smfdate(rec[6:10]),             // SMF30DTE
-	//		string(rec[devOff+2:devOff+8]), // SMF30FVL
-	//	)
-	//	if err != nil {
-	//		log.Println(err)
-	//	}
-	//	devOff += 8
-	//}
+
+	// I/O activity section
+	if header.SMF30UON > 0 {
+		ioacOff := header.SMF30UOF - 4
+		_, err = p2Stmt030.Exec(
+			count030,
+			header.SMF30TME, // SMF30TME
+			header.SMF30DTE, // SMF30DTE
+			int(binary.BigEndian.Uint32(rec[ioacOff+0:ioacOff+4])),   // SMF30INP
+			int(binary.BigEndian.Uint32(rec[ioacOff+4:ioacOff+8])),   // SMF30TEP
+			int(binary.BigEndian.Uint32(rec[ioacOff+8:ioacOff+12])),  // SMF30TPT
+			int(binary.BigEndian.Uint32(rec[ioacOff+12:ioacOff+16])), // SMF30TGT
+			int(rec[ioacOff+16]), // SMF30RDR
+			int(rec[ioacOff+17]), // SMF30RDT
+			int(binary.BigEndian.Uint32(rec[ioacOff+18:ioacOff+22])), // SMF30TCN
+			int(binary.BigEndian.Uint32(rec[ioacOff+22:ioacOff+26])), // SMF30DCF
+			int(binary.BigEndian.Uint32(rec[ioacOff+28:ioacOff+32])), // SMF30TRR
+			int(binary.BigEndian.Uint32(rec[ioacOff+32:ioacOff+36])), // SMF30AIC
+			int(binary.BigEndian.Uint32(rec[ioacOff+36:ioacOff+40])), // SMF30AID
+			int(binary.BigEndian.Uint32(rec[ioacOff+40:ioacOff+44])), // SMF30AIW
+			int(binary.BigEndian.Uint32(rec[ioacOff+44:ioacOff+48])), // SMF30AIS
+			int(binary.BigEndian.Uint32(rec[ioacOff+48:ioacOff+52])), // SMF30EIC
+			int(binary.BigEndian.Uint32(rec[ioacOff+52:ioacOff+56])), // SMF30EID
+			int(binary.BigEndian.Uint32(rec[ioacOff+56:ioacOff+60])), // SMF30EIW
+			int(binary.BigEndian.Uint32(rec[ioacOff+60:ioacOff+64])), // SMF30EIS
+			int(binary.BigEndian.Uint64(rec[ioacOff+64:ioacOff+72])), // SMF30TEX
+			int(binary.BigEndian.Uint32(rec[ioacOff+72:ioacOff+76])), // SMF30DAS
+		)
+		if err != nil {
+			log.Println(err)
+		}
+	}
 }
