@@ -10,6 +10,8 @@ import (
 
 var p1Stmt030 *sql.Stmt
 var p2Stmt030 *sql.Stmt
+var p3Stmt030 *sql.Stmt
+var p4Stmt030 *sql.Stmt
 var once030 sync.Once
 var count030 int
 
@@ -125,7 +127,7 @@ type ident030 struct {
 }
 
 func smf030Init() {
-	sqlStmt := `
+	creatStmt1 := `
 	DROP TABLE IF EXISTS smf030;
 	CREATE TABLE smf030 (
 	    ID         INT        NOT NULL,
@@ -172,17 +174,15 @@ func smf030Init() {
 		SMF30COR   TEXT       
 	);
 	`
-	_, err := db.Exec(sqlStmt)
+	_, err := db.Exec(creatStmt1)
 	if err != nil {
-		log.Printf("%q: %s\n", err, sqlStmt)
+		log.Printf("%q: %s\n", err, creatStmt1)
 	}
 
-	sqlStmt2 := `
+	creatStmt2 := `
 	DROP TABLE IF EXISTS smf030_ioac;
 	CREATE TABLE smf030_ioac (
 	    ID         INT        NOT NULL,
-		SMF30TME   DATETIME   NOT NULL,
-		SMF30DTE   DATETIME   NOT NULL,
 		SMF30INP   INT        NOT NULL,
 		SMF30TEP   INT        NOT NULL,
 		SMF30TPT   INT        NOT NULL,
@@ -204,12 +204,85 @@ func smf030Init() {
 		SMF30DAS   INT        NOT NULL
 	);
 	`
-	_, err = db.Exec(sqlStmt2)
+	_, err = db.Exec(creatStmt2)
 	if err != nil {
-		log.Printf("%q: %s\n", err, sqlStmt2)
+		log.Printf("%q: %s\n", err, creatStmt2)
 	}
 
-	sqlStmt3 := `
+	creatStmt3 := `
+	DROP TABLE IF EXISTS smf030_comp;
+	CREATE TABLE smf030_comp (
+	    ID         INT        NOT NULL,
+		SMF30SCC   INT        NOT NULL,
+		SMF30STI   INT        NOT NULL,
+		SMF30ARC   INT        NOT NULL
+	);
+	`
+	_, err = db.Exec(creatStmt3)
+	if err != nil {
+		log.Printf("%q: %s\n", err, creatStmt3)
+	}
+
+	creatStmt4 := `
+	DROP TABLE IF EXISTS smf030_proc;
+	CREATE TABLE smf030_proc (
+	    ID         INT        NOT NULL,
+		SMF30TFL   INT        NOT NULL,
+		SMF30CPT   INT        NOT NULL,
+		SMF30CPS   INT        NOT NULL,
+		SMF30ICU   INT        NOT NULL,
+		SMF30ISB   INT        NOT NULL,
+		SMF30JVU   INT        NOT NULL,
+		SMF30IVU   INT        NOT NULL,
+		SMF30JVA   INT        NOT NULL,
+		SMF30IVA   INT        NOT NULL,
+		SMF30IST   DATETIME   NOT NULL,
+		SMF30IDT   DATETIME   NOT NULL,
+		SMF30IIP   INT        NOT NULL,
+		SMF30RCT   INT        NOT NULL,
+		SMF30HPT   INT        NOT NULL,
+		SMF30CSC   INT        NOT NULL,
+		SMF30DMI   INT        NOT NULL,
+		SMF30DMO   INT        NOT NULL,
+		SMF30ASR   INT        NOT NULL,
+		SMF30ENC   INT        NOT NULL,
+		SMF30DET   INT        NOT NULL,
+		SMF30CEP   INT        NOT NULL,
+		SMF30TF2   INT        NOT NULL,
+		SMF30T32   INT        NOT NULL,
+		SMF30T33   INT        NOT NULL,
+		SMF30_TIME_ON_IFA INT        NOT NULL,
+		SMF30_ENCLAVE_TIME_ON_IFA INT        NOT NULL,
+		SMF30_DEP_ENCLAVE_TIME_ON_IFA INT        NOT NULL,
+		SMF30_TIME_IFA_ON_CP INT        NOT NULL,
+		SMF30_ENCLAVE_TIME_IFA_ON_CP INT        NOT NULL,
+		SMF30_DEP_ENCLAVE_TIME_IFA_ON_CP INT        NOT NULL,
+		SMF30CEPI  INT        NOT NULL,
+		SMF30_TIME_ON_zIIP INT        NOT NULL,
+		SMF30_ENCLAVE_TIME_ON_zIIP INT        NOT NULL,
+		SMF30_DEPENC_TIME_ON_zIIP INT        NOT NULL,
+		SMF30_TIME_zIIP_ON_CP INT        NOT NULL,
+		SMF30_ENCLAVE_TIME_zIIP_ON_CP INT        NOT NULL,
+		SMF30_DEPENC_TIME_zIIP_ON_CP INT        NOT NULL,
+		SMF30_ENCLAVE_TIME_zIIP_QUAL INT        NOT NULL,
+		SMF30_DEPENC_TIME_zIIP_QUAL INT        NOT NULL,
+		SMF30CRP   INT        NOT NULL,
+		SMF30ICU_Step_Term INT        NOT NULL,
+		SMF30ICU_Step_Init INT        NOT NULL,
+		SMF30ISB_Step_Term INT        NOT NULL,
+		SMF30ISB_Step_Init INT        NOT NULL,
+		SMF30_Missed_SMF30BLK INT        NOT NULL,
+		SMF30_Missed_SMF30DCT INT        NOT NULL,
+		SMF30_Highest_Task_CPU_Percent INT        NOT NULL,
+		SMF30_Highest_Task_CPU_Program TEXT       NOT NULL
+	);
+	`
+	_, err = db.Exec(creatStmt4)
+	if err != nil {
+		log.Printf("%q: %s\n", err, creatStmt4)
+	}
+
+	insertStmt1 := `
 		INSERT INTO smf030
 		VALUES (
 			?,
@@ -256,14 +329,87 @@ func smf030Init() {
 			?
 		);
 `
-	p1Stmt030, err = db.Prepare(sqlStmt3)
+	p1Stmt030, err = db.Prepare(insertStmt1)
 	if err != nil {
-		log.Printf("%q: %s\n", err, sqlStmt3)
+		log.Printf("%q: %s\n", err, insertStmt1)
 	}
 
-	sqlStmt4 := `
+	insertStmt2 := `
 		INSERT INTO smf030_ioac
 		VALUES (
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?
+		);
+	`
+
+	p2Stmt030, err = db.Prepare(insertStmt2)
+	if err != nil {
+		log.Printf("%q: %s\n", err, insertStmt2)
+	}
+
+	insertStmt3 := `
+		INSERT INTO smf030_comp
+		VALUES (
+			?,
+			?,
+			?,
+			?
+		);
+	`
+
+	p3Stmt030, err = db.Prepare(insertStmt3)
+	if err != nil {
+		log.Printf("%q: %s\n", err, insertStmt3)
+	}
+
+	insertStmt4 := `
+		INSERT INTO smf030_proc
+		VALUES (
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
 			?,
 			?,
 			?,
@@ -289,9 +435,9 @@ func smf030Init() {
 		);
 	`
 
-	p2Stmt030, err = db.Prepare(sqlStmt4)
+	p4Stmt030, err = db.Prepare(insertStmt4)
 	if err != nil {
-		log.Printf("%q: %s\n", err, sqlStmt4)
+		log.Printf("%q: %s\n", err, insertStmt4)
 	}
 }
 
@@ -553,8 +699,6 @@ func smf030Parse(rec []byte) {
 		ioacOff := header.SMF30UOF - 4
 		_, err = p2Stmt030.Exec(
 			count030,
-			header.SMF30TME, // SMF30TME
-			header.SMF30DTE, // SMF30DTE
 			int(binary.BigEndian.Uint32(rec[ioacOff+0:ioacOff+4])),   // SMF30INP
 			int(binary.BigEndian.Uint32(rec[ioacOff+4:ioacOff+8])),   // SMF30TEP
 			int(binary.BigEndian.Uint32(rec[ioacOff+8:ioacOff+12])),  // SMF30TPT
@@ -574,6 +718,80 @@ func smf030Parse(rec []byte) {
 			int(binary.BigEndian.Uint32(rec[ioacOff+60:ioacOff+64])), // SMF30EIS
 			int(binary.BigEndian.Uint64(rec[ioacOff+64:ioacOff+72])), // SMF30TEX
 			int(binary.BigEndian.Uint32(rec[ioacOff+72:ioacOff+76])), // SMF30DAS
+		)
+		if err != nil {
+			log.Println(err)
+		}
+	}
+
+	// Completion section
+	if header.SMF30TON > 0 {
+		compOff := header.SMF30TOF - 4
+		_, err = p3Stmt030.Exec(
+			count030,
+			int(binary.BigEndian.Uint16(rec[compOff+0:compOff+2])), // SMF30SCC
+			int(binary.BigEndian.Uint16(rec[compOff+2:compOff+4])), // SMF30STI
+			int(binary.BigEndian.Uint32(rec[compOff+4:compOff+8])), // SMF30ARC
+		)
+		if err != nil {
+			log.Println(err)
+		}
+	}
+
+	// Processor accounting section
+	if header.SMF30CON > 0 {
+		procOff := header.SMF30COF - 4
+		bcd2asc(rec[procOff+178 : procOff+186])
+		_, err = p4Stmt030.Exec(
+			count030,
+			int(binary.BigEndian.Uint16(rec[procOff+2:procOff+4])),   // SMF30TFL
+			int(binary.BigEndian.Uint32(rec[procOff+4:procOff+8])),   // SMF30CPT
+			int(binary.BigEndian.Uint32(rec[procOff+8:procOff+12])),  // SMF30CPS
+			int(binary.BigEndian.Uint32(rec[procOff+12:procOff+16])), // SMF30ICU
+			int(binary.BigEndian.Uint32(rec[procOff+16:procOff+20])), // SMF30ISB
+			int(binary.BigEndian.Uint32(rec[procOff+20:procOff+24])), // SMF30JVU
+			int(binary.BigEndian.Uint32(rec[procOff+24:procOff+28])), // SMF30IVU
+			int(binary.BigEndian.Uint32(rec[procOff+28:procOff+32])), // SMF30JVA
+			int(binary.BigEndian.Uint32(rec[procOff+32:procOff+36])), // SMF30IVA
+			smftime(rec[procOff+36:procOff+40]),                      // SMF30IST
+			smfdate(rec[procOff+40:procOff+44]),                      // SMF30IDT
+			int(binary.BigEndian.Uint32(rec[procOff+44:procOff+48])), // SMF30IIP
+			int(binary.BigEndian.Uint32(rec[procOff+48:procOff+52])), // SMF30RCT
+			int(binary.BigEndian.Uint32(rec[procOff+52:procOff+56])), // SMF30HPT
+			int(binary.BigEndian.Uint32(rec[procOff+56:procOff+60])), // SMF30CSC
+			int(binary.BigEndian.Uint32(rec[procOff+60:procOff+64])), // SMF30DMI
+			int(binary.BigEndian.Uint32(rec[procOff+64:procOff+68])), // SMF30DMO
+			int(binary.BigEndian.Uint32(rec[procOff+68:procOff+72])), // SMF30ASR
+			int(binary.BigEndian.Uint32(rec[procOff+72:procOff+76])), // SMF30ENC
+			int(binary.BigEndian.Uint32(rec[procOff+76:procOff+80])), // SMF30DET
+			int(binary.BigEndian.Uint32(rec[procOff+80:procOff+84])), // SMF30CEP
+			int(rec[procOff+84]), // SMF30TF2
+			int(rec[procOff+85]), // SMF30T32
+			int(rec[procOff+86]), // SMF30T33
+			int(binary.BigEndian.Uint32(rec[procOff+88:procOff+92])),   // SMF30_TIME_ON_IFA
+			int(binary.BigEndian.Uint32(rec[procOff+92:procOff+96])),   // SMF30_ENCLAVE_TIME_ON_IFA
+			int(binary.BigEndian.Uint32(rec[procOff+96:procOff+100])),  // SMF30_DEP_ENCLAVE_TIME_ON_IFA
+			int(binary.BigEndian.Uint32(rec[procOff+100:procOff+104])), // SMF30_TIME_IFA_ON_CP
+			int(binary.BigEndian.Uint32(rec[procOff+104:procOff+108])), // SMF30_ENCLAVE_TIME_IFA_ON_CP
+			int(binary.BigEndian.Uint32(rec[procOff+108:procOff+112])), // SMF30_DEP_ENCLAVE_TIME_IFA_ON_CP
+			int(binary.BigEndian.Uint32(rec[procOff+112:procOff+116])), // SMF30CEPI
+			int(binary.BigEndian.Uint32(rec[procOff+116:procOff+120])), // SMF30_TIME_ON_zIIP
+			int(binary.BigEndian.Uint32(rec[procOff+120:procOff+124])), // SMF30_ENCLAVE_TIME_ON_zIIP
+			int(binary.BigEndian.Uint32(rec[procOff+124:procOff+128])), // SMF30_DEPENC_TIME_ON_zIIP
+			int(binary.BigEndian.Uint32(rec[procOff+128:procOff+132])), // SMF30_TIME_zIIP_ON_CP
+			int(binary.BigEndian.Uint32(rec[procOff+132:procOff+136])), // SMF30_ENCLAVE_TIME_zIIP_ON_CP
+			int(binary.BigEndian.Uint32(rec[procOff+136:procOff+140])), // SMF30_DEPENC_TIME_zIIP_ON_CP
+			int(binary.BigEndian.Uint32(rec[procOff+140:procOff+144])), // SMF30_ENCLAVE_TIME_zIIP_QUAL
+			int(binary.BigEndian.Uint32(rec[procOff+144:procOff+148])), // SMF30_DEPENC_TIME_zIIP_QUAL
+			int(binary.BigEndian.Uint32(rec[procOff+148:procOff+152])), // SMF30CRP
+			int(binary.BigEndian.Uint32(rec[procOff+152:procOff+156])), // SMF30ICU_Step_Term
+			int(binary.BigEndian.Uint32(rec[procOff+156:procOff+160])), // SMF30ICU_Step_Init
+			int(binary.BigEndian.Uint32(rec[procOff+160:procOff+164])), // SMF30ISB_Step_Term
+			int(binary.BigEndian.Uint32(rec[procOff+164:procOff+168])), // SMF30ISB_Step_Init
+			int(binary.BigEndian.Uint32(rec[procOff+168:procOff+172])), // SMF30_Missed_SMF30BLK
+			int(binary.BigEndian.Uint32(rec[procOff+172:procOff+176])), // SMF30_Missed_SMF30DCT
+			int(binary.BigEndian.Uint16(rec[procOff+176:procOff+178])), // SMF30_Highest_Task_CPU_Percent
+			string(rec[procOff+178:procOff+186]),                       // SMF30_Highest_Task_CPU_Program
 		)
 		if err != nil {
 			log.Println(err)

@@ -110,4 +110,6 @@ func main() {
 		}
 	}
 	fmt.Printf("Elapsed time: %v seconds\n", elapsed.Seconds())
+	_, err = db.Exec("VACUUM;")
+	handleErr(err)
 }

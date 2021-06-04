@@ -36,8 +36,6 @@ func smf017Init() {
 	DROP TABLE IF EXISTS smf017_vol;
 	CREATE TABLE smf017_vol (
 	    ID         INT        NOT NULL,
-		SMF17TME   DATETIME   NOT NULL,
-		SMF17DTE   DATETIME   NOT NULL,
 		SMF17FVL   TEXT       NOT NULL
 	);
 	`
@@ -68,8 +66,6 @@ func smf017Init() {
 	sqlStmt4 := `
 		INSERT INTO smf017_vol
 		VALUES (
-			?,
-			?,
 			?,
 			?
 		);
@@ -112,8 +108,6 @@ func smf017Parse(rec []byte) {
 		bcd2asc(rec[devOff+2 : devOff+8])
 		_, err = p2Stmt017.Exec(
 			count017,
-			smftime(rec[2:6]),              // SMF17TME
-			smfdate(rec[6:10]),             // SMF17DTE
 			string(rec[devOff+2:devOff+8]), // SMF17FVL
 		)
 		if err != nil {

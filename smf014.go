@@ -253,8 +253,6 @@ func smf014Init() {
 	DROP TABLE IF EXISTS smf014_ucb;
 	CREATE TABLE smf014_ucb (
 	    ID         INT        NOT NULL,
-		SMF14TME   DATETIME   NOT NULL,
-		SMF14DTE   DATETIME   NOT NULL,
 		SMFUCBDV   INT        NOT NULL,
 		SMFSRTEV   TEXT       NOT NULL,
 		SMFUCBTY   INT        NOT NULL,
@@ -274,8 +272,6 @@ func smf014Init() {
 	sqlStmt4 := `
 		INSERT INTO smf014_ucb
 		VALUES (
-			?,
-			?,
 			?,
 			?,
 			?,
@@ -624,8 +620,6 @@ func smf014Parse(rec []byte) {
 
 		_, err = p2Stmt014.Exec(
 			count014,
-			smftime(rec[2:6]),  // SMF4TME
-			smfdate(rec[6:10]), // SMF4DTE
 			int(binary.BigEndian.Uint16(rec[tempOff+0:tempOff+2])),   // SMFUCBDV
 			string(rec[tempOff+2:tempOff+8]),                         // SMFSRTEV
 			int(binary.BigEndian.Uint32(rec[tempOff+8:tempOff+12])),  // SMFUCBTY

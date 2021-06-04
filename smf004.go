@@ -79,8 +79,6 @@ func smf004Init() {
 	DROP TABLE IF EXISTS smf004_dev;
 	CREATE TABLE smf004_dev (
 	    ID         INT        NOT NULL,
-		SMF4TME    DATETIME   NOT NULL,
-		SMF4DTE    DATETIME   NOT NULL,
 		SMF4DEVC   INT        NOT NULL,
 		SMF4UTYP   INT        NOT NULL,
 		SMF4CUAD   INT        NOT NULL,
@@ -155,8 +153,6 @@ func smf004Init() {
 	sqlStmt4 := `
 		INSERT INTO smf004_dev
 		VALUES (
-			?,
-			?,
 			?,
 			?,
 			?,
@@ -258,8 +254,6 @@ func smf004Parse(rec []byte) {
 	for i := 0; i < numDevs; i++ {
 		_, err = p2Stmt004.Exec(
 			count004,
-			smftime(rec[2:6]),  // SMF4TME
-			smfdate(rec[6:10]), // SMF4DTE
 			int(rec[devOff+0]), // SMF4DEVC
 			int(rec[devOff+1]), // SMF4UTYP
 			int(binary.BigEndian.Uint16(rec[devOff+2:devOff+4])), // SMF4CUAD
