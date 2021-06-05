@@ -22,8 +22,8 @@ func handleErr(err error) {
 }
 
 func init() {
-	_ = os.Remove("./smf.db")
-	db, err = sql.Open("sqlite3", "./smf.db")
+	_ = os.Remove("smf.db")
+	db, err = sql.Open("sqlite3", "file:smf.db?_mutex=no")
 	handleErr(err)
 	_, err = db.Exec("PRAGMA cache_size = 400000;")
 	handleErr(err)

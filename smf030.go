@@ -17,6 +17,14 @@ var p6Stmt030 *sql.Stmt
 var p7Stmt030 *sql.Stmt
 var p8Stmt030 *sql.Stmt
 var p9Stmt030 *sql.Stmt
+var p10Stmt030 *sql.Stmt
+var p11Stmt030 *sql.Stmt
+var p12Stmt030 *sql.Stmt
+var p13Stmt030 *sql.Stmt
+var p14Stmt030 *sql.Stmt
+var p15Stmt030 *sql.Stmt
+var p16Stmt030 *sql.Stmt
+var p17Stmt030 *sql.Stmt
 var once030 sync.Once
 var count030 int
 
@@ -454,6 +462,174 @@ func smf030Init() {
 		log.Printf("%q: %s\n", err, creatStmt9)
 	}
 
+	creatStmt10 := `
+	DROP TABLE IF EXISTS smf030_appc;
+	CREATE TABLE smf030_appc (
+	    ID         INT        NOT NULL,
+		SMF30DC    INT        NOT NULL,
+		SMF30DCA   INT        NOT NULL,
+		SMF30DSC   INT        NOT NULL,
+		SMF30DDS   BLOB       NOT NULL,
+		SMF30DRC   INT        NOT NULL,
+		SMF30DDR   BLOB       NOT NULL,
+		SMF30DAC   INT        NOT NULL,
+		SMF30DTR   INT        NOT NULL
+	);
+	`
+	_, err = db.Exec(creatStmt10)
+	if err != nil {
+		log.Printf("%q: %s\n", err, creatStmt10)
+	}
+
+	creatStmt11 := `
+	DROP TABLE IF EXISTS smf030_appc_cum;
+	CREATE TABLE smf030_appc_cum (
+	    ID         INT        NOT NULL,
+		SMF30CN    INT        NOT NULL,
+		SMF30CNA   INT        NOT NULL,
+		SMF30SEN   INT        NOT NULL,
+		SMF30DAT   BLOB       NOT NULL,
+		SMF30REC   INT        NOT NULL,
+		SMF30DAR   BLOB       NOT NULL,
+		SMF30TAC   INT        NOT NULL,
+		SMF30ATR   INT        NOT NULL
+	);
+	`
+	_, err = db.Exec(creatStmt11)
+	if err != nil {
+		log.Printf("%q: %s\n", err, creatStmt11)
+	}
+
+	creatStmt12 := `
+	DROP TABLE IF EXISTS smf030_unix;
+	CREATE TABLE smf030_unix (
+	    ID         INT        NOT NULL,
+		SMF30OPI   INT        NOT NULL,
+		SMF30OPG   INT        NOT NULL,
+		SMF30OUI   INT        NOT NULL,
+		SMF30OUG   INT        NOT NULL,
+		SMF30OSI   INT        NOT NULL,
+		SMF30OSC   INT        NOT NULL,
+		SMF30OST   INT        NOT NULL,
+		SMF30ODR   INT        NOT NULL,
+		SMF30OFR   INT        NOT NULL,
+		SMF30OFW   INT        NOT NULL,
+		SMF30OPR   INT        NOT NULL,
+		SMF30OPW   INT        NOT NULL,
+		SMF30OLL   INT        NOT NULL,
+		SMF30OLP   INT        NOT NULL,
+		SMF30OGL   INT        NOT NULL,
+		SMF30OGP   INT        NOT NULL,
+		SMF30OPP   INT        NOT NULL,
+		SMF30OSY   INT        NOT NULL
+	);
+	`
+	_, err = db.Exec(creatStmt12)
+	if err != nil {
+		log.Printf("%q: %s\n", err, creatStmt12)
+	}
+
+	creatStmt13 := `
+	DROP TABLE IF EXISTS smf030_arm;
+	CREATE TABLE smf030_arm (
+	    ID         INT        NOT NULL,
+		SMF30RNM   TEXT       NOT NULL,
+		SMF30RTP   TEXT       NOT NULL,
+		SMF30RRG   TEXT       NOT NULL,
+		SMF30RSN   TEXT       NOT NULL,
+		SMF30RGT   DATETIME   NOT NULL,
+		SMF30RGD   DATETIME   NOT NULL,
+		SMF30RWT   DATETIME   NOT NULL,
+		SMF30RWD   DATETIME   NOT NULL,
+		SMF30RYT   DATETIME   NOT NULL,
+		SMF30RYD   DATETIME   NOT NULL,
+		SMF30RTT   DATETIME   NOT NULL,
+		SMF30RTD   DATETIME   NOT NULL
+	);
+	`
+	_, err = db.Exec(creatStmt13)
+	if err != nil {
+		log.Printf("%q: %s\n", err, creatStmt13)
+	}
+
+	creatStmt14 := `
+	DROP TABLE IF EXISTS smf030_usag;
+	CREATE TABLE smf030_usag (
+	    ID         INT        NOT NULL,
+		SMF30UPO   TEXT       NOT NULL,
+		SMF30UPN   TEXT       NOT NULL,
+		SMF30UPV   TEXT       NOT NULL,
+		SMF30UPQ   TEXT       NOT NULL,
+		SMF30UPI   TEXT       NOT NULL,
+		SMF30UCT   INT        NOT NULL,
+		SMF30UCS   INT        NOT NULL,
+		SMF30URD   BLOB       NOT NULL,
+		SMF30UDF   INT        NOT NULL,
+		SMF30UFG   INT        NOT NULL
+	);
+	`
+	_, err = db.Exec(creatStmt14)
+	if err != nil {
+		log.Printf("%q: %s\n", err, creatStmt14)
+	}
+
+	creatStmt15 := `
+	DROP TABLE IF EXISTS smf030_mers;
+	CREATE TABLE smf030_mers (
+	    ID         INT        NOT NULL,
+		SMF30MRS   TEXT       NOT NULL,
+		SMF30MRA   INT        NOT NULL,
+		SMF30MRD   INT        NOT NULL,
+		SMF30MRI   INT        NOT NULL
+	);
+	`
+	_, err = db.Exec(creatStmt15)
+	if err != nil {
+		log.Printf("%q: %s\n", err, creatStmt15)
+	}
+
+	creatStmt16 := `
+	DROP TABLE IF EXISTS smf030_cntr;
+	CREATE TABLE smf030_cntr (
+	    ID         INT        NOT NULL,
+		SMF30InstFlgs1MRS              INT        NOT NULL,
+		SMF30_Inst_CP_Task             INT        NOT NULL,
+		SMF30_Inst_CP_NonPreemptSRB    INT        NOT NULL,
+		SMF30_Inst_CP_PreemptSRB       INT        NOT NULL,
+		SMF30_Inst_Offload             INT        NOT NULL,
+		SMF30_Inst_OffloadOnCP         INT        NOT NULL,
+		SMF30_Inst_CP_Enclave          INT        NOT NULL,
+		SMF30_Inst_Offload_Enclave     INT        NOT NULL,
+		SMF30_Inst_OffloadOnCP_Enclave INT        NOT NULL,
+		SMF30_Inst_CP_DepEnc           INT        NOT NULL,
+		SMF30_Inst_Offload_DepEnc      INT        NOT NULL,
+		SMF30_Inst_OffloadOnCP_DepEnc  INT        NOT NULL
+	);
+	`
+	_, err = db.Exec(creatStmt16)
+	if err != nil {
+		log.Printf("%q: %s\n", err, creatStmt16)
+	}
+
+	creatStmt17 := `
+	DROP TABLE IF EXISTS smf030_zedc;
+	CREATE TABLE smf030_zedc (
+	    ID         INT        NOT NULL,
+		SMF30_US_ComprReq       INT        NOT NULL,
+		SMF30_US_ComprReq_Prob  INT        NOT NULL,
+		SMF30_US_QueueTime      INT        NOT NULL,
+		SMF30_US_ExecTime       INT        NOT NULL,
+		SMF30_US_Def_UncomprIn  INT        NOT NULL,
+		SMF30_US_Def_ComprOut   INT        NOT NULL,
+		SMF30_US_Inf_ComprIn    INT        NOT NULL,
+		SMF30_US_Inf_DecomprOut INT        NOT NULL
+	);
+	`
+	_, err = db.Exec(creatStmt17)
+	if err != nil {
+		log.Printf("%q: %s\n", err, creatStmt17)
+	}
+
 	insertStmt1 := `
 		INSERT INTO smf030
 		VALUES (
@@ -782,6 +958,182 @@ func smf030Init() {
 	p9Stmt030, err = db.Prepare(insertStmt9)
 	if err != nil {
 		log.Printf("%q: %s\n", err, insertStmt9)
+	}
+
+	insertStmt10 := `
+		INSERT INTO smf030_appc
+		VALUES (
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?
+		);
+	`
+
+	p10Stmt030, err = db.Prepare(insertStmt10)
+	if err != nil {
+		log.Printf("%q: %s\n", err, insertStmt10)
+	}
+
+	insertStmt11 := `
+		INSERT INTO smf030_appc_cum
+		VALUES (
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?
+		);
+	`
+
+	p11Stmt030, err = db.Prepare(insertStmt11)
+	if err != nil {
+		log.Printf("%q: %s\n", err, insertStmt11)
+	}
+
+	insertStmt12 := `
+		INSERT INTO smf030_unix
+		VALUES (
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?
+		);
+	`
+
+	p12Stmt030, err = db.Prepare(insertStmt12)
+	if err != nil {
+		log.Printf("%q: %s\n", err, insertStmt12)
+	}
+
+	insertStmt13 := `
+		INSERT INTO smf030_arm
+		VALUES (
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?
+		);
+	`
+
+	p13Stmt030, err = db.Prepare(insertStmt13)
+	if err != nil {
+		log.Printf("%q: %s\n", err, insertStmt13)
+	}
+
+	insertStmt14 := `
+		INSERT INTO smf030_usag
+		VALUES (
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?
+		);
+	`
+
+	p14Stmt030, err = db.Prepare(insertStmt14)
+	if err != nil {
+		log.Printf("%q: %s\n", err, insertStmt14)
+	}
+
+	insertStmt15 := `
+		INSERT INTO smf030_mers
+		VALUES (
+			?,
+			?,
+			?,
+			?,
+			?
+		);
+	`
+
+	p15Stmt030, err = db.Prepare(insertStmt15)
+	if err != nil {
+		log.Printf("%q: %s\n", err, insertStmt15)
+	}
+
+	insertStmt16 := `
+		INSERT INTO smf030_cntr
+		VALUES (
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?
+		);
+	`
+
+	p16Stmt030, err = db.Prepare(insertStmt16)
+	if err != nil {
+		log.Printf("%q: %s\n", err, insertStmt16)
+	}
+
+	insertStmt17 := `
+		INSERT INTO smf030_zedc
+		VALUES (
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?,
+			?
+		);
+	`
+
+	p17Stmt030, err = db.Prepare(insertStmt17)
+	if err != nil {
+		log.Printf("%q: %s\n", err, insertStmt17)
 	}
 }
 
@@ -1326,8 +1678,188 @@ func smf030Parse(rec []byte) {
 	}
 
 	// APPC resource section
+	// TODO: Convert fields SMF30DDS and SMF30DDR from HFP to BFP
+	if header.SMF30DRN > 0 {
+		appcOff := header.SMF30DRO - 4
+		_, err = p10Stmt030.Exec(
+			count030,
+			int(binary.BigEndian.Uint32(rec[appcOff+0:appcOff+4])),   // SMF30DC
+			int(binary.BigEndian.Uint32(rec[appcOff+4:appcOff+8])),   // SMF30DCA
+			int(binary.BigEndian.Uint32(rec[appcOff+8:appcOff+12])),  // SMF30DSC
+			rec[appcOff+12:appcOff+20],                               // SMF30DDS
+			int(binary.BigEndian.Uint32(rec[appcOff+20:appcOff+24])), // SMF30DRC
+			rec[appcOff+24:appcOff+32],                               // SMF30DDR
+			int(binary.BigEndian.Uint32(rec[appcOff+32:appcOff+36])), // SMF30DAC
+			int(binary.BigEndian.Uint32(rec[appcOff+36:appcOff+40])), // SMF30DTR
+		)
+		if err != nil {
+			log.Println(err)
+		}
+	}
 
 	// APPC cumulative resource section
+	// TODO: Convert fields SMF30DAT and SMF30DAR from HFP to BFP
+	if header.SMF30ARN > 0 {
+		appcOff := header.SMF30ARO - 4
+		_, err = p11Stmt030.Exec(
+			count030,
+			int(binary.BigEndian.Uint32(rec[appcOff+0:appcOff+4])),   // SMF30CN
+			int(binary.BigEndian.Uint32(rec[appcOff+4:appcOff+8])),   // SMF30CNA
+			int(binary.BigEndian.Uint32(rec[appcOff+8:appcOff+12])),  // SMF30SEN
+			rec[appcOff+12:appcOff+20],                               // SMF30DAT
+			int(binary.BigEndian.Uint32(rec[appcOff+20:appcOff+24])), // SMF30REC
+			rec[appcOff+24:appcOff+32],                               // SMF30DAR
+			int(binary.BigEndian.Uint32(rec[appcOff+32:appcOff+36])), // SMF30TAC
+			int(binary.BigEndian.Uint32(rec[appcOff+36:appcOff+40])), // SMF30ATR
+		)
+		if err != nil {
+			log.Println(err)
+		}
+	}
 
 	// UNIX process section
+	unixOff := header.SMF30OPO - 4
+	for i := 0; i < header.SMF30OPN; i++ {
+		_, err = p12Stmt030.Exec(
+			count030,
+			int(binary.BigEndian.Uint32(rec[0:4])),   // SMF30OPI
+			int(binary.BigEndian.Uint32(rec[4:8])),   // SMF30OPG
+			int(binary.BigEndian.Uint32(rec[8:12])),  // SMF30OUI
+			int(binary.BigEndian.Uint32(rec[12:16])), // SMF30OUG
+			int(binary.BigEndian.Uint32(rec[16:20])), // SMF30OSI
+			int(binary.BigEndian.Uint32(rec[20:24])), // SMF30OSC
+			int(binary.BigEndian.Uint32(rec[24:28])), // SMF30OST
+			int(binary.BigEndian.Uint32(rec[28:32])), // SMF30ODR
+			int(binary.BigEndian.Uint32(rec[32:36])), // SMF30OFR
+			int(binary.BigEndian.Uint32(rec[36:40])), // SMF30OFW
+			int(binary.BigEndian.Uint32(rec[40:44])), // SMF30OPR
+			int(binary.BigEndian.Uint32(rec[44:48])), // SMF30OPW
+			int(binary.BigEndian.Uint32(rec[56:60])), // SMF30OLL
+			int(binary.BigEndian.Uint32(rec[60:64])), // SMF30OLP
+			int(binary.BigEndian.Uint32(rec[64:68])), // SMF30OGL
+			int(binary.BigEndian.Uint32(rec[68:72])), // SMF30OGP
+			int(binary.BigEndian.Uint32(rec[72:76])), // SMF30OPP
+			int(binary.BigEndian.Uint32(rec[92:96])), // SMF30OSY
+		)
+		if err != nil {
+			log.Println(err)
+		}
+		unixOff += header.SMF30OPL
+	}
+
+	// ARM section
+	armOff := header.SMF30RMO - 4
+	for i := 0; i < header.SMF30RMN; i++ {
+		bcd2asc(rec[armOff+0 : armOff+16])  // SMF30RNM
+		bcd2asc(rec[armOff+16 : armOff+24]) // SMF30RTP
+		bcd2asc(rec[armOff+24 : armOff+40]) // SMF30RRG
+		bcd2asc(rec[armOff+40 : armOff+48]) // SMF30RSN
+		_, err = p13Stmt030.Exec(
+			count030,
+			string(rec[armOff+0:armOff+16]),   // SMF30RNM
+			string(rec[armOff+16:armOff+24]),  // SMF30RTP
+			string(rec[armOff+24:armOff+40]),  // SMF30RRG
+			string(rec[armOff+40:armOff+48]),  // SMF30RSN
+			smftime(rec[armOff+48:armOff+52]), // SMF30RGT
+			smfdate(rec[armOff+52:armOff+56]), // SMF30RGD
+			smftime(rec[armOff+56:armOff+60]), // SMF30RWT
+			smfdate(rec[armOff+60:armOff+64]), // SMF30RWD
+			smftime(rec[armOff+64:armOff+68]), // SMF30RYT
+			smfdate(rec[armOff+68:armOff+72]), // SMF30RYD
+			smftime(rec[armOff+72:armOff+76]), // SMF30RTT
+			smfdate(rec[armOff+76:armOff+80]), // SMF30RTD
+		)
+		if err != nil {
+			log.Println(err)
+		}
+		armOff += header.SMF30RML
+	}
+
+	// Usage data section
+	usagOff := header.SMF30UDO - 4
+	for i := 0; i < header.SMF30UDN; i++ {
+		bcd2asc(rec[usagOff+0 : usagOff+16])  // SMF30UPO
+		bcd2asc(rec[usagOff+16 : usagOff+32]) // SMF30UPN
+		bcd2asc(rec[usagOff+32 : usagOff+40]) // SMF30UPV
+		bcd2asc(rec[usagOff+40 : usagOff+48]) // SMF30UPQ
+		bcd2asc(rec[usagOff+48 : usagOff+56]) // SMF30UPI
+		_, err = p14Stmt030.Exec(
+			count030,
+			string(rec[usagOff+0:usagOff+16]),                        // SMF30UPO
+			string(rec[usagOff+16:usagOff+32]),                       // SMF30UPN
+			string(rec[usagOff+32:usagOff+40]),                       // SMF30UPV
+			string(rec[usagOff+40:usagOff+48]),                       // SMF30UPQ
+			string(rec[usagOff+48:usagOff+56]),                       // SMF30UPI
+			int(binary.BigEndian.Uint32(rec[usagOff+56:usagOff+60])), // SMF30UCT
+			int(binary.BigEndian.Uint32(rec[usagOff+60:usagOff+64])), // SMF30UCS
+			rec[usagOff+64:usagOff+72],                               // SMF30URD
+			int(rec[usagOff+72]),                                     // SMF30UDF
+			int(rec[usagOff+73]),                                     // SMF30UFG
+		)
+		if err != nil {
+			log.Println(err)
+		}
+		usagOff += header.SMF30UDL
+	}
+
+	// Multisystem enclave remote system data section
+	mersOff := header.SMF30MOF - 4
+	for i := 0; i < header.SMF30MNO; i++ {
+		bcd2asc(rec[mersOff+0 : mersOff+8]) // SMF30MRS
+		_, err = p15Stmt030.Exec(
+			count030,
+			string(rec[mersOff+0:mersOff+8]), // SMF30MRS
+			int(binary.BigEndian.Uint32(rec[mersOff+8:mersOff+12])),  // SMF30MRA
+			int(binary.BigEndian.Uint32(rec[mersOff+12:mersOff+16])), // SMF30MRD
+			int(binary.BigEndian.Uint32(rec[mersOff+16:mersOff+20])), // SMF30MRI
+		)
+		if err != nil {
+			log.Println(err)
+		}
+		mersOff += header.SMF30MLN
+	}
+
+	// Counter data section
+	cntrOff := header.SMF30CDO - 4
+	for i := 0; i < header.SMF30CDN; i++ {
+		_, err = p16Stmt030.Exec(
+			count030,
+			int(rec[cntrOff+0]), // SMF30InstFlgs1MRS
+			int(binary.BigEndian.Uint64(rec[cntrOff+8:cntrOff+16])),  // SMF30_Inst_CP_Task
+			int(binary.BigEndian.Uint64(rec[cntrOff+16:cntrOff+24])), // SMF30_Inst_CP_NonPreemptSRB
+			int(binary.BigEndian.Uint64(rec[cntrOff+24:cntrOff+32])), // SMF30_Inst_CP_PreemptSRB
+			int(binary.BigEndian.Uint64(rec[cntrOff+32:cntrOff+40])), // SMF30_Inst_Offload
+			int(binary.BigEndian.Uint64(rec[cntrOff+40:cntrOff+48])), // SMF30_Inst_OffloadOnCP
+			int(binary.BigEndian.Uint64(rec[cntrOff+48:cntrOff+56])), // SMF30_Inst_CP_Enclave
+			int(binary.BigEndian.Uint64(rec[cntrOff+56:cntrOff+64])), // SMF30_Inst_Offload_Enclave
+			int(binary.BigEndian.Uint64(rec[cntrOff+64:cntrOff+72])), // SMF30_Inst_OffloadOnCP_Enclave
+			int(binary.BigEndian.Uint64(rec[cntrOff+72:cntrOff+80])), // SMF30_Inst_CP_DepEnc
+			int(binary.BigEndian.Uint64(rec[cntrOff+80:cntrOff+88])), // SMF30_Inst_Offload_DepEnc
+			int(binary.BigEndian.Uint64(rec[cntrOff+88:cntrOff+96])), // SMF30_Inst_OffloadOnCP_DepEnc
+		)
+		if err != nil {
+			log.Println(err)
+		}
+		cntrOff += header.SMF30CDL
+	}
+
+	// zEDC data section
+	zedcOff := header.SMF30USO - 4
+	for i := 0; i < header.SMF30USN; i++ {
+		_, err = p17Stmt030.Exec(
+			count030,
+			int(binary.BigEndian.Uint64(rec[zedcOff+0:zedcOff+8])),   // SMF30_US_ComprReq
+			int(binary.BigEndian.Uint64(rec[zedcOff+8:zedcOff+16])),  // SMF30_US_ComprReq_Prob
+			int(binary.BigEndian.Uint64(rec[zedcOff+16:zedcOff+24])), // SMF30_US_QueueTime
+			int(binary.BigEndian.Uint64(rec[zedcOff+24:zedcOff+32])), // SMF30_US_ExecTime
+			int(binary.BigEndian.Uint64(rec[zedcOff+32:zedcOff+40])), // SMF30_US_Def_UncomprIn
+			int(binary.BigEndian.Uint64(rec[zedcOff+40:zedcOff+48])), // SMF30_US_Def_ComprOut
+			int(binary.BigEndian.Uint64(rec[zedcOff+48:zedcOff+56])), // SMF30_US_Inf_ComprIn
+			int(binary.BigEndian.Uint64(rec[zedcOff+56:zedcOff+64])), // SMF30_US_Inf_DecomprOut
+		)
+		if err != nil {
+			log.Println(err)
+		}
+		zedcOff += header.SMF30USL
+	}
 }
