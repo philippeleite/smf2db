@@ -908,12 +908,11 @@ func smf030Parse(rec []byte) {
 		header.SMF30USL = 0
 		header.SMF30USN = 0
 	}
-	// numVols := int(rec[131])
-	isFirst := header.IsFirst()
-	isAdd := header.IsAdditional()
-	more := header.More()
-	isLast := header.IsLast()
-	_, _, _, _ = isFirst, isAdd, more, isLast
+	//isFirst := header.IsFirst()
+	//isAdd := header.IsAdditional()
+	//more := header.More()
+	//isLast := header.IsLast()
+	//_, _, _, _ = isFirst, isAdd, more, isLast
 
 	// Subsystem section
 	ssysOff := header.SMF30SOF - 4
@@ -1325,4 +1324,10 @@ func smf030Parse(rec []byte) {
 		}
 		operOff += header.SMF30OLN
 	}
+
+	// APPC resource section
+
+	// APPC cumulative resource section
+
+	// UNIX process section
 }
