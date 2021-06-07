@@ -9,6 +9,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -22,28 +23,30 @@ func handleErr(err error) {
 }
 
 func init() {
-	_ = os.Remove("smf.db")
-	db, err = sql.Open("sqlite3", "file:smf.db?_mutex=no")
-	handleErr(err)
-	_, err = db.Exec("PRAGMA cache_size = 400000;")
-	handleErr(err)
-	_, err = db.Exec("PRAGMA synchronous = OFF;")
-	handleErr(err)
-	_, err = db.Exec("PRAGMA journal_mode = OFF;")
-	handleErr(err)
-	_, err = db.Exec("PRAGMA locking_mode = EXCLUSIVE;")
+	dbFile := "smf.db"
+	_ = os.Remove(dbFile)
+	var strbuff strings.Builder
+	strbuff.Grow(200)
+	strbuff.WriteString("file:")
+	strbuff.WriteString(dbFile)
+	strbuff.WriteString("?_mutex=no")
+	strbuff.WriteString("&_cache_size=400000")
+	strbuff.WriteString("&_synchronous=off")
+	strbuff.WriteString("&_journal_mode=off")
+	strbuff.WriteString("&_locking_mode=exclusive")
+	strbuff.WriteString("&_temp_store=memory")
+	strbuff.WriteString("&_auto_vacuum=none")
+	db, err = sql.Open("sqlite3", strbuff.String())
 	handleErr(err)
 	_, err = db.Exec("PRAGMA count_changes = OFF;")
 	handleErr(err)
 	_, err = db.Exec("PRAGMA temp_store = MEMORY;")
 	handleErr(err)
-	_, err = db.Exec("PRAGMA auto_vacuum = NONE ;")
-	handleErr(err)
-	//smfInit()
 }
 
 func main() {
-	file, err := os.Open("testdata/smftest.rdw")
+	smfFile := "testdata/smftest.rdw"
+	file, err := os.Open(smfFile)
 	//file, err := os.Open("testdata/safrasmf")
 	handleErr(err)
 	defer func() {
