@@ -4,17 +4,20 @@ import (
 	"bufio"
 	"database/sql"
 	"encoding/binary"
+	"flag"
 	"fmt"
 	_ "github.com/mattn/go-sqlite3"
 	"io"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 )
 
 var db *sql.DB
 var err error
+var version = "0.1.0"
 
 func handleErr(err error) {
 	if err != nil {
@@ -22,40 +25,118 @@ func handleErr(err error) {
 	}
 }
 
-func init() {
-	dbFile := "smf.db"
+type subtypes [256]bool
+
+var typeFilter = false
+
+func (s *subtypes) String() string {
+	buff := strings.Builder{}
+	buff.WriteString("[ ")
+	for i := 0; i < len(*s); i++ {
+		buff.WriteString(fmt.Sprintf("%t ", s[i]))
+	}
+	buff.WriteString("]")
+	return buff.String()
+}
+
+func (s *subtypes) Set(value string) error {
+	typeFilter = true
+	trimmed := strings.Trim(value, "()[]{}")
+	conv2int := func(s string) int {
+		str, err := strconv.Atoi(s)
+		if err != nil {
+			fmt.Printf("invalid record type: %v", s)
+			os.Exit(1)
+		}
+		return str
+	}
+	for _, num := range strings.Split(trimmed, ",") {
+		if strings.Contains(num, ":") {
+			typeRange := strings.Split(num, ":")
+			min := conv2int(typeRange[0])
+			max := conv2int(typeRange[1])
+			if min > max {
+				fmt.Println("Invalid record type range:", num)
+				os.Exit(1)
+			}
+			for i := min; i <= max; i++ {
+				s[i] = true
+			}
+		} else {
+			tmp := conv2int(num)
+			s[tmp] = true
+		}
+	}
+	return nil
+}
+
+var typeTable subtypes
+
+func main() {
+
+	// Parse command line parameters
+	var help bool
+	var vFlag bool
+	flag.BoolVar(&help, "h", false, "Usage help")
+	flag.BoolVar(&vFlag, "v", false, "Show version info")
+	flag.Var(&typeTable, "t", "Record types separated by comma")
+	flag.Parse()
+	if help {
+		printUsage()
+		os.Exit(0)
+	}
+	if vFlag {
+		fmt.Printf("smf2db - SMF to SQLite utility version %s\n", version)
+	}
+
+	var smfFile string
+	var dbFile string
+	switch len(flag.Args()) {
+	case 1:
+		smfFile = flag.Arg(0)
+		dbFile = "smf.db"
+	case 2:
+		smfFile = flag.Arg(0)
+		dbFile = flag.Arg(1)
+	default:
+		printUsage()
+		os.Exit(8)
+	}
+	//fmt.Println(typeTable)
+	//fmt.Println("SMF file:", smfFile)
+	//fmt.Println("DB file:", dbFile)
+	//os.Exit(0)
+
+	// Database initializations
 	_ = os.Remove(dbFile)
-	var strbuff strings.Builder
-	strbuff.Grow(200)
-	strbuff.WriteString("file:")
-	strbuff.WriteString(dbFile)
-	strbuff.WriteString("?_mutex=no")
-	strbuff.WriteString("&_cache_size=400000")
-	strbuff.WriteString("&_synchronous=off")
-	strbuff.WriteString("&_journal_mode=off")
-	strbuff.WriteString("&_locking_mode=exclusive")
-	strbuff.WriteString("&_temp_store=memory")
-	strbuff.WriteString("&_auto_vacuum=none")
-	db, err = sql.Open("sqlite3", strbuff.String())
+	var strBuff strings.Builder
+	strBuff.Grow(200)
+	strBuff.WriteString("file:")
+	strBuff.WriteString(dbFile)
+	strBuff.WriteString("?_mutex=no")
+	strBuff.WriteString("&_cache_size=400000")
+	strBuff.WriteString("&_synchronous=off")
+	strBuff.WriteString("&_journal_mode=off")
+	strBuff.WriteString("&_locking_mode=exclusive")
+	strBuff.WriteString("&_temp_store=memory")
+	strBuff.WriteString("&_auto_vacuum=none")
+	db, err = sql.Open("sqlite3", strBuff.String())
 	handleErr(err)
 	_, err = db.Exec("PRAGMA count_changes = OFF;")
 	handleErr(err)
 	_, err = db.Exec("PRAGMA temp_store = MEMORY;")
 	handleErr(err)
-}
 
-func main() {
-	smfFile := "testdata/smftest.rdw"
+	// SMF file
 	file, err := os.Open(smfFile)
-	//file, err := os.Open("testdata/safrasmf")
 	handleErr(err)
 	defer func() {
 		err = file.Close()
 		err = db.Close()
 	}()
-	rdr := bufio.NewReader(file)
+	rdr := bufio.NewReaderSize(file, 32768)
 	var record = make([]byte, 64*1024)
-	var count int = 0
+	var count = 0
 	var offset uint = 0
 	var matrix = make([]uint64, 256)
 	var buffer = make([]byte, 2)
@@ -92,11 +173,15 @@ func main() {
 		if err != nil {
 			fmt.Print(err)
 		}
-		offset += (uint(reclen) - 4)
+		offset += uint(reclen) - 4
 		if recseg == 0 || recseg == 512 {
 			recnum := uint(record[1])
 			matrix[recnum] += 1
-			smfParse(record[:offset])
+			if !typeFilter {
+				smfParse(record[:offset])
+			} else if typeTable[recnum] {
+				smfParse(record[:offset])
+			}
 			count++
 			offset = 0
 		}
@@ -115,4 +200,13 @@ func main() {
 	fmt.Printf("Elapsed time: %v seconds\n", elapsed.Seconds())
 	_, err = db.Exec("VACUUM;")
 	handleErr(err)
+}
+
+func printUsage() {
+	fmt.Println("smf2db [options] smfFile [dbFile]")
+	fmt.Println("  smfFile: input SMF file with RDW information")
+	fmt.Println("   dbFile: optional output SQLite database name (default: smf.db)")
+	fmt.Println()
+	fmt.Println("  Options:")
+	flag.PrintDefaults()
 }
