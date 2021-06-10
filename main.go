@@ -19,6 +19,23 @@ var db *sql.DB
 var err error
 var version = "0.1.0"
 
+var parseTable = map[int]func([]byte){
+	4:  smf004Parse,
+	5:  smf005Parse,
+	14: smf014Parse,
+	15: smf015Parse,
+	17: smf017Parse,
+	18: smf018Parse,
+	30: smf030Parse,
+	41: smf041Parse,
+}
+
+func smfParse(rec []byte) {
+	if f, ok := parseTable[int(rec[1])]; ok {
+		f(rec)
+	}
+}
+
 func handleErr(err error) {
 	if err != nil {
 		log.Fatalln(err)
@@ -102,10 +119,20 @@ func main() {
 		printUsage()
 		os.Exit(8)
 	}
-	//fmt.Println(typeTable)
-	//fmt.Println("SMF file:", smfFile)
-	//fmt.Println("DB file:", dbFile)
-	//os.Exit(0)
+
+	// SMF file
+	_, err := os.Lstat(smfFile)
+	if err != nil {
+		fmt.Println("Invalid SMF file:", err)
+		os.Exit(1)
+	}
+
+	file, err := os.Open(smfFile)
+	handleErr(err)
+	defer func() {
+		err = file.Close()
+		err = db.Close()
+	}()
 
 	// Database initializations
 	_ = os.Remove(dbFile)
@@ -127,13 +154,7 @@ func main() {
 	_, err = db.Exec("PRAGMA temp_store = MEMORY;")
 	handleErr(err)
 
-	// SMF file
-	file, err := os.Open(smfFile)
-	handleErr(err)
-	defer func() {
-		err = file.Close()
-		err = db.Close()
-	}()
+	// SMF parsing
 	rdr := bufio.NewReaderSize(file, 32768)
 	var record = make([]byte, 64*1024)
 	var count = 0
