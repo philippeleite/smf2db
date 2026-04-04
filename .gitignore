@@ -1,5 +1,6 @@
 /smf2db
-/testdata/
+/data/
 /smftest.txt
 /smf.db
 /build/
+.idea/

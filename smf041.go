@@ -3,9 +3,10 @@ package main
 import (
 	"database/sql"
 	"encoding/binary"
-	_ "github.com/mattn/go-sqlite3"
 	"log"
 	"sync"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
 var p1Stmt041 *sql.Stmt
@@ -271,8 +272,8 @@ func smf041Parse(rec []byte) {
 	count041 += 1
 	_, err = p1Stmt041.Exec(
 		count041,
-		header.SMF41DTE,
 		header.SMF41TME,
+		header.SMF41DTE,
 		header.SMF41SID,
 		header.SMF41SSI,
 		header.SMF41STY,
@@ -304,12 +305,12 @@ func smf041Parse(rec []byte) {
 		bcd2asc(rec[objaOff+18 : objaOff+26]) // SMF41JBN
 		_, err = p3Stmt041.Exec(
 			count041,
-			string(rec[objaOff+0:objaOff+8]), // SMF41DDA
+			string(rec[objaOff+0:objaOff+8]),                         // SMF41DDA
 			int(binary.BigEndian.Uint32(rec[objaOff+8:objaOff+12])),  // SMF41AZA
 			int(binary.BigEndian.Uint32(rec[objaOff+12:objaOff+16])), // SMF41ATA
-			int(rec[objaOff+16]),               // SMF41TYA
-			int(rec[objaOff+17]),               // SMF41AMA
-			string(rec[objaOff+18:objaOff+26]), // SMF41JBN
+			int(rec[objaOff+16]),                                     // SMF41TYA
+			int(rec[objaOff+17]),                                     // SMF41AMA
+			string(rec[objaOff+18:objaOff+26]),                       // SMF41JBN
 		)
 		if err != nil {
 			log.Println(err)
@@ -354,7 +355,7 @@ func smf041Parse(rec []byte) {
 		bcd2asc(rec[vlfsOff+0 : vlfsOff+8]) // SMF41CLS
 		_, err = p6Stmt041.Exec(
 			count041,
-			string(rec[vlfsOff+0:vlfsOff+8]), // SMF41CLS
+			string(rec[vlfsOff+0:vlfsOff+8]),                         // SMF41CLS
 			int(binary.BigEndian.Uint32(rec[vlfsOff+8:vlfsOff+12])),  // SMF41MVT
 			int(binary.BigEndian.Uint32(rec[vlfsOff+12:vlfsOff+16])), // SMF41USD
 			int(binary.BigEndian.Uint32(rec[vlfsOff+16:vlfsOff+20])), // SMF41SRC
