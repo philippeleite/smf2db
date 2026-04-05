@@ -3,9 +3,10 @@ package main
 import (
 	"database/sql"
 	"encoding/binary"
-	_ "github.com/mattn/go-sqlite3"
 	"log"
 	"sync"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
 var p1Stmt030 *sql.Stmt
@@ -1398,8 +1399,8 @@ func smf030Parse(rec []byte) {
 			int(binary.BigEndian.Uint32(rec[ioacOff+4:ioacOff+8])),   // SMF30TEP
 			int(binary.BigEndian.Uint32(rec[ioacOff+8:ioacOff+12])),  // SMF30TPT
 			int(binary.BigEndian.Uint32(rec[ioacOff+12:ioacOff+16])), // SMF30TGT
-			int(rec[ioacOff+16]), // SMF30RDR
-			int(rec[ioacOff+17]), // SMF30RDT
+			int(rec[ioacOff+16]),                                     // SMF30RDR
+			int(rec[ioacOff+17]),                                     // SMF30RDT
 			int(binary.BigEndian.Uint32(rec[ioacOff+18:ioacOff+22])), // SMF30TCN
 			int(binary.BigEndian.Uint32(rec[ioacOff+22:ioacOff+26])), // SMF30DCF
 			int(binary.BigEndian.Uint32(rec[ioacOff+28:ioacOff+32])), // SMF30TRR
@@ -1439,30 +1440,30 @@ func smf030Parse(rec []byte) {
 		bcd2asc(rec[procOff+178 : procOff+186])
 		_, err = p4Stmt030.Exec(
 			count030,
-			int(binary.BigEndian.Uint16(rec[procOff+2:procOff+4])),   // SMF30TFL
-			int(binary.BigEndian.Uint32(rec[procOff+4:procOff+8])),   // SMF30CPT
-			int(binary.BigEndian.Uint32(rec[procOff+8:procOff+12])),  // SMF30CPS
-			int(binary.BigEndian.Uint32(rec[procOff+12:procOff+16])), // SMF30ICU
-			int(binary.BigEndian.Uint32(rec[procOff+16:procOff+20])), // SMF30ISB
-			int(binary.BigEndian.Uint32(rec[procOff+20:procOff+24])), // SMF30JVU
-			int(binary.BigEndian.Uint32(rec[procOff+24:procOff+28])), // SMF30IVU
-			int(binary.BigEndian.Uint32(rec[procOff+28:procOff+32])), // SMF30JVA
-			int(binary.BigEndian.Uint32(rec[procOff+32:procOff+36])), // SMF30IVA
-			smftime(rec[procOff+36:procOff+40]),                      // SMF30IST
-			smfdate(rec[procOff+40:procOff+44]),                      // SMF30IDT
-			int(binary.BigEndian.Uint32(rec[procOff+44:procOff+48])), // SMF30IIP
-			int(binary.BigEndian.Uint32(rec[procOff+48:procOff+52])), // SMF30RCT
-			int(binary.BigEndian.Uint32(rec[procOff+52:procOff+56])), // SMF30HPT
-			int(binary.BigEndian.Uint32(rec[procOff+56:procOff+60])), // SMF30CSC
-			int(binary.BigEndian.Uint32(rec[procOff+60:procOff+64])), // SMF30DMI
-			int(binary.BigEndian.Uint32(rec[procOff+64:procOff+68])), // SMF30DMO
-			int(binary.BigEndian.Uint32(rec[procOff+68:procOff+72])), // SMF30ASR
-			int(binary.BigEndian.Uint32(rec[procOff+72:procOff+76])), // SMF30ENC
-			int(binary.BigEndian.Uint32(rec[procOff+76:procOff+80])), // SMF30DET
-			int(binary.BigEndian.Uint32(rec[procOff+80:procOff+84])), // SMF30CEP
-			int(rec[procOff+84]), // SMF30TF2
-			int(rec[procOff+85]), // SMF30T32
-			int(rec[procOff+86]), // SMF30T33
+			int(binary.BigEndian.Uint16(rec[procOff+2:procOff+4])),     // SMF30TFL
+			int(binary.BigEndian.Uint32(rec[procOff+4:procOff+8])),     // SMF30CPT
+			int(binary.BigEndian.Uint32(rec[procOff+8:procOff+12])),    // SMF30CPS
+			int(binary.BigEndian.Uint32(rec[procOff+12:procOff+16])),   // SMF30ICU
+			int(binary.BigEndian.Uint32(rec[procOff+16:procOff+20])),   // SMF30ISB
+			int(binary.BigEndian.Uint32(rec[procOff+20:procOff+24])),   // SMF30JVU
+			int(binary.BigEndian.Uint32(rec[procOff+24:procOff+28])),   // SMF30IVU
+			int(binary.BigEndian.Uint32(rec[procOff+28:procOff+32])),   // SMF30JVA
+			int(binary.BigEndian.Uint32(rec[procOff+32:procOff+36])),   // SMF30IVA
+			smftime(rec[procOff+36:procOff+40]),                        // SMF30IST
+			smfdate(rec[procOff+40:procOff+44]),                        // SMF30IDT
+			int(binary.BigEndian.Uint32(rec[procOff+44:procOff+48])),   // SMF30IIP
+			int(binary.BigEndian.Uint32(rec[procOff+48:procOff+52])),   // SMF30RCT
+			int(binary.BigEndian.Uint32(rec[procOff+52:procOff+56])),   // SMF30HPT
+			int(binary.BigEndian.Uint32(rec[procOff+56:procOff+60])),   // SMF30CSC
+			int(binary.BigEndian.Uint32(rec[procOff+60:procOff+64])),   // SMF30DMI
+			int(binary.BigEndian.Uint32(rec[procOff+64:procOff+68])),   // SMF30DMO
+			int(binary.BigEndian.Uint32(rec[procOff+68:procOff+72])),   // SMF30ASR
+			int(binary.BigEndian.Uint32(rec[procOff+72:procOff+76])),   // SMF30ENC
+			int(binary.BigEndian.Uint32(rec[procOff+76:procOff+80])),   // SMF30DET
+			int(binary.BigEndian.Uint32(rec[procOff+80:procOff+84])),   // SMF30CEP
+			int(rec[procOff+84]),                                       // SMF30TF2
+			int(rec[procOff+85]),                                       // SMF30T32
+			int(rec[procOff+86]),                                       // SMF30T33
 			int(binary.BigEndian.Uint32(rec[procOff+88:procOff+92])),   // SMF30_TIME_ON_IFA
 			int(binary.BigEndian.Uint32(rec[procOff+92:procOff+96])),   // SMF30_ENCLAVE_TIME_ON_IFA
 			int(binary.BigEndian.Uint32(rec[procOff+96:procOff+100])),  // SMF30_DEP_ENCLAVE_TIME_ON_IFA
@@ -1499,8 +1500,8 @@ func smf030Parse(rec []byte) {
 		bcd2asc(rec[excpOff+4 : excpOff+12]) // SMF30DDN
 		_, err = p5Stmt030.Exec(
 			count030,
-			int(rec[excpOff+0]), // SMF30DEV
-			int(rec[excpOff+1]), // SMF30UTP
+			int(rec[excpOff+0]),                                      // SMF30DEV
+			int(rec[excpOff+1]),                                      // SMF30UTP
 			int(binary.BigEndian.Uint16(rec[excpOff+2:excpOff+4])),   // SMF30CUA
 			string(rec[excpOff+4:excpOff+12]),                        // SMF30DDN
 			int(binary.BigEndian.Uint32(rec[excpOff+12:excpOff+16])), // SMF30BLK
@@ -1535,8 +1536,8 @@ func smf030Parse(rec []byte) {
 		storOff := header.SMF30ROF - 4
 		_, err = p7Stmt030.Exec(
 			count030,
-			int(rec[storOff+2]), // SMF30SFL
-			int(rec[storOff+3]), // SMF30SPK
+			int(rec[storOff+2]),                                        // SMF30SFL
+			int(rec[storOff+3]),                                        // SMF30SPK
 			int(binary.BigEndian.Uint16(rec[storOff+4:storOff+6])),     // SMF30PRV
 			int(binary.BigEndian.Uint16(rec[storOff+6:storOff+8])),     // SMF30SYS
 			int(binary.BigEndian.Uint32(rec[storOff+8:storOff+12])),    // SMF30PGI
@@ -1577,7 +1578,7 @@ func smf030Parse(rec []byte) {
 			int(binary.BigEndian.Uint32(rec[storOff+156:storOff+160])), // SMF30PEI
 			int(binary.BigEndian.Uint64(rec[storOff+160:storOff+168])), // SMF30ERS
 			int(binary.BigEndian.Uint64(rec[storOff+168:storOff+176])), // SMF30MEM
-			int(rec[storOff+176]), // SMF30MES
+			int(rec[storOff+176]),                                      // SMF30MES
 			int(binary.BigEndian.Uint64(rec[storOff+184:storOff+192])), // SMF30HVR
 			int(binary.BigEndian.Uint64(rec[storOff+192:storOff+200])), // SMF30HVA
 			int(binary.BigEndian.Uint64(rec[storOff+200:storOff+208])), // SMF30HVO
@@ -1598,9 +1599,6 @@ func smf030Parse(rec []byte) {
 		bcd2asc(rec[perfOff+52 : perfOff+60])   // SMF30GRN
 		bcd2asc(rec[perfOff+60 : perfOff+68])   // SMF30RCN
 		bcd2asc(rec[perfOff+80 : perfOff+96])   // SMF30PFL
-		bcd2asc(rec[perfOff+112 : perfOff+113]) // SMF30PF1
-		bcd2asc(rec[perfOff+113 : perfOff+114]) // SMF30PF2
-		bcd2asc(rec[perfOff+114 : perfOff+115]) // SMF30INV
 		bcd2asc(rec[perfOff+116 : perfOff+124]) // SMF30JPN
 		_, err = p8Stmt030.Exec(
 			count030,
@@ -1722,24 +1720,24 @@ func smf030Parse(rec []byte) {
 	for i := 0; i < header.SMF30OPN; i++ {
 		_, err = p12Stmt030.Exec(
 			count030,
-			int(binary.BigEndian.Uint32(rec[0:4])),   // SMF30OPI
-			int(binary.BigEndian.Uint32(rec[4:8])),   // SMF30OPG
-			int(binary.BigEndian.Uint32(rec[8:12])),  // SMF30OUI
-			int(binary.BigEndian.Uint32(rec[12:16])), // SMF30OUG
-			int(binary.BigEndian.Uint32(rec[16:20])), // SMF30OSI
-			int(binary.BigEndian.Uint32(rec[20:24])), // SMF30OSC
-			int(binary.BigEndian.Uint32(rec[24:28])), // SMF30OST
-			int(binary.BigEndian.Uint32(rec[28:32])), // SMF30ODR
-			int(binary.BigEndian.Uint32(rec[32:36])), // SMF30OFR
-			int(binary.BigEndian.Uint32(rec[36:40])), // SMF30OFW
-			int(binary.BigEndian.Uint32(rec[40:44])), // SMF30OPR
-			int(binary.BigEndian.Uint32(rec[44:48])), // SMF30OPW
-			int(binary.BigEndian.Uint32(rec[56:60])), // SMF30OLL
-			int(binary.BigEndian.Uint32(rec[60:64])), // SMF30OLP
-			int(binary.BigEndian.Uint32(rec[64:68])), // SMF30OGL
-			int(binary.BigEndian.Uint32(rec[68:72])), // SMF30OGP
-			int(binary.BigEndian.Uint32(rec[72:76])), // SMF30OPP
-			int(binary.BigEndian.Uint32(rec[92:96])), // SMF30OSY
+			int(binary.BigEndian.Uint32(rec[unixOff+0:unixOff+4])),   // SMF30OPI
+			int(binary.BigEndian.Uint32(rec[unixOff+4:unixOff+8])),   // SMF30OPG
+			int(binary.BigEndian.Uint32(rec[unixOff+8:unixOff+12])),  // SMF30OUI
+			int(binary.BigEndian.Uint32(rec[unixOff+12:unixOff+16])), // SMF30OUG
+			int(binary.BigEndian.Uint32(rec[unixOff+16:unixOff+20])), // SMF30OSI
+			int(binary.BigEndian.Uint32(rec[unixOff+20:unixOff+24])), // SMF30OSC
+			int(binary.BigEndian.Uint32(rec[unixOff+24:unixOff+28])), // SMF30OST
+			int(binary.BigEndian.Uint32(rec[unixOff+28:unixOff+32])), // SMF30ODR
+			int(binary.BigEndian.Uint32(rec[unixOff+32:unixOff+36])), // SMF30OFR
+			int(binary.BigEndian.Uint32(rec[unixOff+36:unixOff+40])), // SMF30OFW
+			int(binary.BigEndian.Uint32(rec[unixOff+40:unixOff+44])), // SMF30OPR
+			int(binary.BigEndian.Uint32(rec[unixOff+44:unixOff+48])), // SMF30OPW
+			int(binary.BigEndian.Uint32(rec[unixOff+56:unixOff+60])), // SMF30OLL
+			int(binary.BigEndian.Uint32(rec[unixOff+60:unixOff+64])), // SMF30OLP
+			int(binary.BigEndian.Uint32(rec[unixOff+64:unixOff+68])), // SMF30OGL
+			int(binary.BigEndian.Uint32(rec[unixOff+68:unixOff+72])), // SMF30OGP
+			int(binary.BigEndian.Uint32(rec[unixOff+72:unixOff+76])), // SMF30OPP
+			int(binary.BigEndian.Uint32(rec[unixOff+92:unixOff+96])), // SMF30OSY
 		)
 		if err != nil {
 			log.Println(err)
@@ -1808,7 +1806,7 @@ func smf030Parse(rec []byte) {
 		bcd2asc(rec[mersOff+0 : mersOff+8]) // SMF30MRS
 		_, err = p15Stmt030.Exec(
 			count030,
-			string(rec[mersOff+0:mersOff+8]), // SMF30MRS
+			string(rec[mersOff+0:mersOff+8]),                         // SMF30MRS
 			int(binary.BigEndian.Uint32(rec[mersOff+8:mersOff+12])),  // SMF30MRA
 			int(binary.BigEndian.Uint32(rec[mersOff+12:mersOff+16])), // SMF30MRD
 			int(binary.BigEndian.Uint32(rec[mersOff+16:mersOff+20])), // SMF30MRI
@@ -1824,7 +1822,7 @@ func smf030Parse(rec []byte) {
 	for i := 0; i < header.SMF30CDN; i++ {
 		_, err = p16Stmt030.Exec(
 			count030,
-			int(rec[cntrOff+0]), // SMF30InstFlgs1MRS
+			int(rec[cntrOff+0]),                                      // SMF30InstFlgs1MRS
 			int(binary.BigEndian.Uint64(rec[cntrOff+8:cntrOff+16])),  // SMF30_Inst_CP_Task
 			int(binary.BigEndian.Uint64(rec[cntrOff+16:cntrOff+24])), // SMF30_Inst_CP_NonPreemptSRB
 			int(binary.BigEndian.Uint64(rec[cntrOff+24:cntrOff+32])), // SMF30_Inst_CP_PreemptSRB
