@@ -4,3 +4,6 @@
 /smf.db
 /build/
 .idea/
+.claude/
+CLAUDE.md
+/docs/
