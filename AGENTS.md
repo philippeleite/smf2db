@@ -1,0 +1,120 @@
+# AGENTS.md — smf2db
+
+Guide for AI agents (and humans) working in this repository.
+
+## What it is
+
+`smf2db` is a Go command-line utility that reads an **IBM z/OS SMF (System Management Facilities) file**, transferred from the mainframe in binary **with the RDW preserved**, and writes the decoded records to a **SQLite** database.
+
+- Version: `0.1.0` (`version` variable in `main.go`)
+- Module: `smf2db`, `go 1.16`, a single `main` package (all `.go` files live in the root)
+- Only dependency: `github.com/mattn/go-sqlite3 v1.14.7`, which **requires CGO**
+
+## Build, run and test
+
+```sh
+# go-sqlite3 needs CGO + a C compiler (gcc/mingw on Windows).
+# This environment defaults to CGO_ENABLED=0: the binary builds, but fails at runtime when opening the database.
+CGO_ENABLED=1 go build -o smf2db .
+
+go test ./...      # only tests the helpers in zutil.go
+go vet ./...
+```
+
+Usage:
+
+```
+smf2db [options] smfFile [dbFile]
+  smfFile  input SMF file, with RDW
+  dbFile   output SQLite database (default: smf.db)
+  -t       record types to process: "4,5,30" or ranges "14:18" (surrounding ()[]{} accepted)
+  -v       show version (does not exit)
+  -h       help
+```
+
+- **`dbFile` is deleted (`os.Remove`) on every run.** Never point it at a database that must be kept.
+- At the end it prints the record count per type (every type read, including those without a parser) and the elapsed time, then runs `VACUUM`.
+- Git-ignored: `/smf2db`, `/data/`, `/smftest.txt`, `/smf.db`, `/build/`, `/docs/`, `.idea/`, `.claude/`, `CLAUDE.md`. SMF test data is kept outside the repository.
+
+## Architecture
+
+| File | Role |
+|---|---|
+| `main.go` | CLI, SQLite setup, RDW file reading, segment reassembly, dispatch by type |
+| `zutil.go` | Conversions: `smfdate`, `filedate`, `smftime`, `bcd2asc`, `asc2bcd`, `b3toInt`, `divmod` |
+| `zutil_test.go` | Unit tests for the helpers |
+| `smfNNN.go` | One parser per SMF record type |
+
+### Flow in `main.go`
+
+1. For each block, read the RDW: 2-byte length + 2-byte segment descriptor (big-endian).
+2. Valid descriptors: `0x0000` (complete), `0x0100` (first), `0x0200` (last), `0x0300` (middle). Any other value (`recseg&0xfcff != 0`) aborts with "SMF file must be transferred preserving RDW information".
+3. Segments are concatenated into a 64 KiB buffer (`record`). When the record ends (`0x0000` or `0x0200`), `record[:offset]` is dispatched.
+4. `smfParse` reads the type from `rec[1]` and calls the function registered in `parseTable`.
+
+**Important:** the `rec` slice passed to a parser **does not include the RDW**. Offsets are therefore 4 bytes lower than in IBM's documentation: `rec[0]` = flag, `rec[1]` = type, `rec[2:6]` = time, `rec[6:10]` = date, `rec[10:14]` = SID. Section offsets read from the record itself (offset/length/number triplets) are relative to the RDW, so they are used as `off - 4`.
+
+### Supported types and generated tables
+
+| Type | File | Tables |
+|---|---|---|
+| 4 (step termination) | `smf004.go` | `smf004`, `smf004_dev` |
+| 5 (job termination) | `smf005.go` | `smf005` |
+| 14 (dataset INPUT/RDBACK) | `smf014.go` | `smf014`, `smf014_ucb` |
+| 15 (dataset OUTPUT/UPDAT/…) | `smf015.go` | `smf015`, `smf015_ucb` |
+| 17 (scratch) | `smf017.go` | `smf017`, `smf017_vol` |
+| 18 (rename) | `smf018.go` | `smf018`, `smf018_vol` |
+| 30 (common address space work) | `smf030.go` | `smf030` + `smf030_{ioac,comp,proc,excp,acct,stor,perf,oper,appc,appc_cum,unix,arm,usag,mers,cntr,zedc}` |
+| 41 (DIV / VLF) | `smf041.go` | `smf041`, `smf041_{prod,obja,obju,obji,vlfs}` |
+
+`smf015.go` is a copy of `smf014.go` with renamed identifiers (same layout). **A fix in one almost always applies to the other.**
+
+## Parser pattern (follow it when adding a new type)
+
+Every `smfNNN.go` follows the same template. Copy the closest file (`smf017.go` is the simplest; `smf041.go`/`smf030.go` for records with triplets):
+
+```go
+var p1StmtNNN, p2StmtNNN *sql.Stmt   // one prepared statement per table
+var onceNNN sync.Once
+var countNNN int                     // produces the ID column
+
+func smfNNNInit() {   // DROP TABLE IF EXISTS + CREATE TABLE + db.Prepare(INSERT ... VALUES (?,...))
+}
+
+func smfNNNParse(rec []byte) {
+    onceNNN.Do(smfNNNInit)           // tables are created only if the type appears in the file
+    bcd2asc(rec[a:b])                // convert text fields IN PLACE, before string()
+    countNNN++
+    p1StmtNNN.Exec(countNNN, ...)    // main record
+    for ... { p2StmtNNN.Exec(countNNN, ...) }  // repeating sections -> child table with the same ID
+}
+```
+
+Then register the function in `parseTable` in `main.go`.
+
+Conventions:
+- **ID**: a sequential counter per type; child tables (`_dev`, `_vol`, `_ucb`, …) reuse the parent record's `ID` for joins. No foreign keys or indexes.
+- **Column names = IBM field names** (`SMF30JBN`, `JFCBDSNM`, …). Each `Exec` argument carries a comment with the field name. Keep it that way: it is the only documentation of the mapping.
+- **Binary integers**: `binary.BigEndian.Uint16/32/64`, 3-byte fields with `b3toInt`, 1-byte fields with `int(rec[n])`.
+- **Dates/times** become text `YYYY-MM-DD HH:MM:SS.mmm`: `smfdate` (packed `0cyydddF`) returns the date only, `smftime` (hundredths of a second since midnight) returns the time only with date `0000-00-00`. A zero date/time becomes `0000-00-00 00:00:00.000`. `filedate` handles the 3-byte JFCB date.
+- **Text**: `bcd2asc` converts **EBCDIC → ASCII** (the name is misleading: it is not BCD) by modifying the buffer. Strings keep their space padding; nothing is trimmed.
+- **Optional fields** (sections that may be absent or depend on flags): an `interface{}` variable holding `nil`, stored as NULL; the column has no `NOT NULL`. See `smf014.go` (DASD vs. tape, extended sections) and `smf030.go` (`SMF30CDO`/`SMF30USO` only when the header is long enough).
+- **Errors**: SQL failures are only logged (`log.Println`/`log.Printf`) and processing continues; only open/file errors stop the program (`handleErr` → `log.Fatalln`). Parsers share a global `err` variable.
+- **Language**: documentation and code comments are written in English.
+
+## Performance
+
+SQLite is opened with `_mutex=no`, `_synchronous=off`, `_journal_mode=off`, `_locking_mode=exclusive`, `_temp_store=memory`, a large cache, plus `PRAGMA count_changes=OFF`. There is no explicit transaction; each `Exec` autocommits (cheap because the journal is off). Processing is sequential and single-threaded: parsers rely on global state and are not safe for concurrency.
+
+## Known issues (verified in the code)
+
+- `smf041.go`, "Object UNACCESS" section: the loop advances `objuOff` but reads `rec[objaOff+...]`, so it stores data from the wrong section.
+- Parsers do not check bounds: a truncated or unexpected record causes an index-out-of-range `panic` that stops the program.
+- `-v` prints the version but does not exit; with no arguments it falls through to usage and exits with code 8.
+- `smf030.go` has `IsFirst/IsAdditional/More/IsLast` (subtype 30 records split across several records), but the calls are commented out: split records are stored as independent records.
+- `main.go` only prints (does not abort on) read errors in the middle of a record; a truncated file can produce garbage in the last record.
+- Tests only cover `zutil.go`; there are no parser tests and no sample SMF file in the repository.
+
+## Reference
+
+Record layouts: IBM *z/OS MVS System Management Facilities (SMF)* (SA38-0667), the chapter for each type. When checking offsets, remember to subtract 4 (RDW) from the documentation's decimal offsets.
