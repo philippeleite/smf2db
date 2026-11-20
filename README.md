@@ -55,6 +55,7 @@ Elapsed time: 9.29 seconds
 | 74 | RMF device (1), XCF (2), OMVS kernel (3), cache subsystem (5) and HFS (6) activity | `smf074` and `smf074_{devctl,dev,xcfctl,xcfsys,xcfmbr,omvs,cachectl,cachedev,cachestat,raid,hfsglobal,hfsbuf}` |
 | 75 | RMF page data set activity | `smf075`, `smf075_page` |
 | 78 | RMF virtual storage (2) and I/O queuing (3) activity | `smf078` and `smf078_{common,cfgctl,cfg,ioq,ioqglob,iop,hpav}` |
+| 80 | RACF processing (logons, resource access, profile changes) | `smf080`, `smf080_reloc`, `smf080_reloc2`, plus reference tables `smf080_events`, `smf080_qualifiers`, `smf080_types` |
 | 84 | JES monitoring facility: JES2 resource usage (subtype 21) | `smf084`, `smf084_mem`, `smf084_res` |
 
 Records of any other type are counted in the summary but not stored.
@@ -107,7 +108,7 @@ A binary built with `CGO_ENABLED=0` compiles but fails at run time with *"go-sql
    //SYSPRINT DD SYSOUT=*
    //SYSIN    DD *
      INDD(DUMPIN,OPTIONS(DUMP))
-     OUTDD(DUMPOUT,TYPE(4:6,14:18,21,30,41,42,60:62,64:66,70:75,78,84))
+     OUTDD(DUMPOUT,TYPE(4:6,14:18,21,30,41,42,60:62,64:66,70:75,78,80,84))
    /*
    ```
 
@@ -327,6 +328,27 @@ ORDER BY transactions DESC;
 
 Some IBM field names contain `#` (for example `R723MTV#`); quote them in SQL: `SELECT "R723MTV#" FROM smf072_wlm`.
 
+### Security (type 80)
+
+RACF access violations by class, user and resource, with readable event names from the reference tables (relocate data type 17 is the class, 1 the resource name):
+
+```sql
+SELECT e.EVENT, q.DESCRIPTION,
+       trim(r.SMF80USR) AS userid,
+       c.SMF80DTA AS class,
+       n.SMF80DTA AS resource,
+       count(*) AS events
+FROM smf080 r
+JOIN smf080_events e USING (SMF80EVT)
+JOIN smf080_qualifiers q ON q.SMF80EVT = r.SMF80EVT AND q.SMF80EVQ = r.SMF80EVQ
+LEFT JOIN smf080_reloc c ON c.ID = r.ID AND c.SMF80DTP = 17
+LEFT JOIN smf080_reloc n ON n.ID = r.ID AND n.SMF80DTP = 1
+WHERE r.SMF80DES & 0x8000            -- violation flag
+GROUP BY 1, 2, 3, 4, 5
+ORDER BY events DESC
+LIMIT 20;
+```
+
 ### Tapes, printing and catalog activity
 
 Tape volumes by data written (`SMF21DBW` counts 4 KB blocks), with error counters:
@@ -377,7 +399,7 @@ SELECT name, type FROM pragma_table_info('smf042_ds');
 
 ## Reference
 
-Record layouts come from IBM **z/OS MVS System Management Facilities (SMF)**, SA38-0667 (z/OS 3.1 edition). It describes every field, its units and its flag bits. The manual is not distributed with this project.
+Record layouts come from IBM **z/OS MVS System Management Facilities (SMF)**, SA38-0667 (z/OS 3.1 edition), except type 80 (RACF), which comes from **z/OS Security Server RACF Macros and Interfaces**, SA23-2288. They describe every field, its units and its flag bits. The manuals are not distributed with this project.
 
 Some records differ from the manual. smf2db follows the data, and [AGENTS.md](AGENTS.md) lists each known difference. For example, many type 42 records leave the triplet count at 0, and some fields documented as EBCDIC actually contain binary data.
 

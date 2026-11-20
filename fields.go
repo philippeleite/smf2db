@@ -30,7 +30,7 @@ func (f fields) columns() string {
 			typ = "BLOB"
 		case 'f', 'i', 'w':
 			typ = "REAL"
-		case 't', 'h', 'H', 'd':
+		case 't', 'T', 'h', 'H', 'd':
 			typ = "DATETIME"
 		}
 		name := fd.name
@@ -47,7 +47,7 @@ func (f fields) columns() string {
 //	u unsigned binary   s signed binary    c EBCDIC text      x hex digits (packed without sign, raw codes)
 //	b raw bytes         t TOD clock        f IBM hex float    p packed decimal integer (0..9 digits + sign)
 //	h packed time 0hhmmssF                 d packed date 0cyydddF                    i packed interval mmsstttF, in seconds
-//	H packed time hhmmsstF (tenths of a second)
+//	H packed time hhmmsstF (tenths of a second)  T binary time in hundredths of a second since midnight (SMF header times)
 //	w unsigned binary wider than 8 bytes (such as 16-byte sums of squares), as an approximate float
 func (f fields) values(s section) []interface{} {
 	v := make([]interface{}, len(f))
@@ -82,6 +82,8 @@ func (f fields) values(s section) []interface{} {
 		case 'h':
 			d := packedDigits(b) // 0hhmmss
 			v[i] = fmt.Sprintf("0000-00-00 %s:%s:%s.000", d[1:3], d[3:5], d[5:7])
+		case 'T':
+			v[i] = smftime(b)
 		case 'H':
 			d := packedDigits(b) // hhmmsst
 			v[i] = fmt.Sprintf("0000-00-00 %s:%s:%s.%s00", d[0:2], d[2:4], d[4:6], d[6:7])

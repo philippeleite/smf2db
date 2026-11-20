@@ -95,6 +95,7 @@ smf2db [options] smfFile [dbFile]
 | 74 (RMF activity of several resources) | `smf074.go`, `rmf.go` | `smf074` (header + RMF product section) and per subtype: 1 `smf074_devctl`, `smf074_dev`; 2 `smf074_xcfctl`, `smf074_xcfsys`, `smf074_xcfmbr`; 3 `smf074_omvs`; 5 `smf074_cachectl`, `smf074_cachedev`, `smf074_cachestat`, `smf074_raid`; 6 `smf074_hfsglobal`, `smf074_hfsbuf` |
 | 75 (RMF page data set activity) | `smf075.go`, `rmf.go` | `smf075` (header + RMF product section), `smf075_page` (only `data/smfdata` has type 75) |
 | 78 (RMF virtual storage and I/O queuing) | `smf078.go`, `rmf.go` | `smf078` (header + RMF product section) and per subtype: 2 `smf078_common`; 3 `smf078_cfgctl`, `smf078_cfg`, `smf078_ioq`, `smf078_ioqglob`, `smf078_iop`, `smf078_hpav` |
+| 80 (RACF processing) | `smf080.go` | `smf080`, `smf080_reloc`, `smf080_reloc2`, and reference tables `smf080_events`, `smf080_qualifiers`, `smf080_types` |
 | 84 (JES monitoring facility) | `smf084.go` | `smf084` (header, JES product and general sections) and, for subtype 21, `smf084_mem`, `smf084_res` (only `data/smfdata` has type 84) |
 
 Type 6 has five writers (External Writer, JES2, JES3, PSF, IP PrintWay) that share the header up to `SMF6SBS`; their sections follow in `SMF6PAD1` bit order, each with its own 2-byte length. Only IP PrintWay sections are decoded, since it is the only writer in the sample data. The extended-mode fields (`SMF6BYTD`, `SMF6URI`, `SMF6ACCT`) are implemented from the manual but untested: every sample record is basic mode.
@@ -126,6 +127,8 @@ Type 74: sections are mapped with `rmfSection` (`rmf.go`: `rmfCreateSections`/`r
 Type 78: in subtype 3 the configuration control sections and the I/O queuing global section each carry their own triplet (at offset 4, relative to the start of the section) to the configuration data sections (`smf078_cfg`) and IOP initiative queue sections (`smf078_iop`); those rows have `ID`, `SEQ` of the enclosing section and `SUBSEQ`. Not decoded (no sample data): subtype 2 private area and subpool sections. Types 76 and 77 are skipped: the samples have no records of them.
 
 Type 84: not an RMF record; its header has `SMF84SBS`, `SMF84SGN`, `SMF84FL1` and `SMF84VER` before the subtype (at manual offset 24), and the header time is binary although the manual says packed. The JES product section times are packed `hhmmsstF` (`H` kind in `fields.go`). Subtype 21's JES2 resource usage section carries two triplets, relative to its start, for the memory area and resource entries. Not decoded (no sample data): subtypes 1–10 (JES3).
+
+Type 80: the layout is in the RACF manual (`data/icha300_v3r1.pdf`, SA23-2288: "Format of SMF type 80 records" and the tables of event codes and relocate section data), not in the SMF manual. Relocate sections (1-byte type/length) and extended-length ones (2-byte) are located by `SMF80REL`/`SMF80RL2`, offsets from `SMF80FLG` (= `rec[0]`). Data of types listed as EBCDIC is stored as text, everything else as hex digits (data type 6, command-related data, is not decoded). `smf080Events`, `smf080Qualifiers` and `smf080Types` were extracted from the manual's tables by script and are loaded into the reference tables for joins.
 
 Type 42 notes:
 - The subtype triplets sit at fixed offsets after the product triplet. `SMF42NT` (number of triplets) is 0 in most real records, so it is ignored.
@@ -163,6 +166,7 @@ Conventions:
 - **Column names = IBM field names** (`SMF30JBN`, `JFCBDSNM`, …). Each `Exec` argument carries a comment with the field name. Keep it that way: it is the only documentation of the mapping.
 - **Binary integers**: `binary.BigEndian.Uint16/32/64`, 3-byte fields with `b3toInt`, 1-byte fields with `int(rec[n])`.
 - **Dates/times** become text `YYYY-MM-DD HH:MM:SS.mmm`: `smfdate` (packed `0cyydddF`) returns the date only, `smftime` (hundredths of a second since midnight) returns the time only with date `0000-00-00`. A zero date/time becomes `0000-00-00 00:00:00.000`. `filedate` handles the 3-byte JFCB date.
+- **Header times**: the `T` kind decodes SMF binary times (hundredths of a second since midnight), so header fields can go in a `fields` table.
 - **Newer helpers** (used by `smf021.go`, `smf042*.go`; prefer them for new parsers): `createTable(name, columns)` creates the table and prepares an INSERT with one placeholder per column (no hand-counted `?` lists); `insert(stmt, args...)` executes and logs; `section` and `tripletAt` (in `smf042.go`) read fields with bounds checks, returning NULL for a field past the end of a shorter section, and locate sections by triplet; `todtime`/`stcketime` convert TOD/STCKE clock values. For sections with dozens of fields, declare a `fields` table (`fields.go`: name, offset, kind, length) and use `.columns()` / `.values(section)`; generate it from the manual with `tools/genfields.py` (see its docstring) and review the kinds by hand.
 - **Text**: `ebcdic(b)` converts a field and returns it as a string (newer parsers use it). `bcd2asc` converts **EBCDIC → ASCII** (the name is misleading: it is not BCD) by modifying the buffer. Strings keep their space padding; nothing is trimmed.
 - **Optional fields** (sections that may be absent or depend on flags): an `interface{}` variable holding `nil`, stored as NULL; the column has no `NOT NULL`. See `smf014.go` (DASD vs. tape, extended sections) and `smf030.go` (`SMF30CDO`/`SMF30USO` only when the header is long enough).
@@ -183,7 +187,7 @@ SQLite is opened with `_mutex=no`, `_synchronous=off`, `_journal_mode=off`, `_lo
 
 ## Reference
 
-Record layouts: IBM *z/OS 3.1 MVS System Management Facilities (SMF)*, SA38-0667-60, kept locally at `data/ieag200_v3r1.pdf` (git-ignored). This is the source of truth for every parser offset.
+Record layouts: IBM *z/OS 3.1 MVS System Management Facilities (SMF)*, SA38-0667-60, kept locally at `data/ieag200_v3r1.pdf` (git-ignored). This is the source of truth for every parser offset, except type 80, whose layout is in *z/OS 3.1 Security Server RACF Macros and Interfaces*, SA23-2288-60, at `data/icha300_v3r1.pdf`.
 
 - Search it as text: `pdftotext -layout data/ieag200_v3r1.pdf <out>.txt`, then grep for the chapter heading, e.g. `Record type 41 (X'29') --`.
 - Read field tables with `-raw`, not `-layout`: `-layout` interleaves the Length/Format column with other rows. Find the page with `pdftotext -f N -l N` + grep for a field name, then `pdftotext -f N -l M -raw data/ieag200_v3r1.pdf - | grep -E "^[0-9]+ [0-9A-F]+ SMF21"` prints clean `offset hex name length format` rows.
