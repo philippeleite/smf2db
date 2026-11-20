@@ -99,6 +99,7 @@ smf2db [options] smfFile [dbFile]
 | 82 (ICSF) | `smf082.go` | `smf082` (header, every subtype), `smf082_t20` (subtype 20) |
 | 84 (JES monitoring facility) | `smf084.go` | `smf084` (header, JES product and general sections) and, for subtype 21, `smf084_mem`, `smf084_res` (only `data/smfdata` has type 84) |
 | 88 (System Logger) | `smf088.go` | `smf088` (one row per log stream: header, product, log stream, event and structure sections) |
+| 89 (usage data) | `smf089.go` | `smf089` (header, product and system ID sections) and `smf089_usage`, `smf089_isect` (1), `smf089_state` (2) |
 | 92 (z/OS UNIX file system activity) | `smf092.go` | `smf092` (header, subsystem and identification sections) and `smf092_open` (10), `smf092_close` (11, 16), `smf092_delete` (14), `smf092_count` (17) |
 
 Type 6 has five writers (External Writer, JES2, JES3, PSF, IP PrintWay) that share the header up to `SMF6SBS`; their sections follow in `SMF6PAD1` bit order, each with its own 2-byte length. Only IP PrintWay sections are decoded, since it is the only writer in the sample data. The extended-mode fields (`SMF6BYTD`, `SMF6URI`, `SMF6ACCT`) are implemented from the manual but untested: every sample record is basic mode.
@@ -138,6 +139,8 @@ Type 82: the layout is in the ICSF System Programmer's Guide (`data/csfb200_icsf
 Type 92: the three header triplets (subsystem, identification, data) are read at their fixed offsets; subtype 17 has no identification section. Open times (`SMF92OTO`, `SMF92CTO`) are the raw TOD clock and include leap seconds (26 s ahead of the record time in the samples), while `SMF92CTC` is UTC, so `SMF92CTC` is usually earlier than `SMF92CTO`; values are stored as recorded and the quirk is documented in `smf092.go`. Not decoded (no sample data): subtypes 1–9, 12, 13, 15, 50–59.
 
 Type 88: each subtype 1 record has one log stream, event and structure section, so they share the `smf088` row. The 8-byte byte counts the manual calls EBCDIC (`SMF88LWB`, `SMF88LDB`, `SMF88SWB`, `SMF88SIB`, `SMF88SAB`) are IBM hex floating point: `SMF88LWB` falls between `SMF88LWI` × `SMF88LIB` and `SMF88LWI` × `SMF88LAB` for every sample log stream. Not decoded (no sample data): subtype 11.
+
+Type 89: the self-defining section is not a list of 8-byte triplets (`SMF89UDR` follows the usage triplet), so each triplet is read at its own offset, and only within `SMF89SDL` (36 in the 2017 samples, which end before the tenant triplets; the bytes past it are not triplets). Subtype 2 reuses the usage triplet for its state data sections. The CPU times (`SMF89UCT`, `SMF89USR`, `SMF89UZT`, `SMF89CCT`, `SMF89CZT`) are "long floating point" (HFP) in hundredths of a second; the generator missed that format and the names with spaces (`SMF89_Capacity _Change_Cnt`…), added by hand. Not decoded (no sample data): tenant resource group sections.
 
 Type 42 notes:
 - The subtype triplets sit at fixed offsets after the product triplet. `SMF42NT` (number of triplets) is 0 in most real records, so it is ignored.
