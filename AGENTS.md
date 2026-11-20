@@ -98,6 +98,7 @@ smf2db [options] smfFile [dbFile]
 | 80 (RACF processing) | `smf080.go` | `smf080`, `smf080_reloc`, `smf080_reloc2`, and reference tables `smf080_events`, `smf080_qualifiers`, `smf080_types` |
 | 82 (ICSF) | `smf082.go` | `smf082` (header, every subtype), `smf082_t20` (subtype 20) |
 | 84 (JES monitoring facility) | `smf084.go` | `smf084` (header, JES product and general sections) and, for subtype 21, `smf084_mem`, `smf084_res` (only `data/smfdata` has type 84) |
+| 92 (z/OS UNIX file system activity) | `smf092.go` | `smf092` (header, subsystem and identification sections) and `smf092_open` (10), `smf092_close` (11, 16), `smf092_delete` (14), `smf092_count` (17) |
 
 Type 6 has five writers (External Writer, JES2, JES3, PSF, IP PrintWay) that share the header up to `SMF6SBS`; their sections follow in `SMF6PAD1` bit order, each with its own 2-byte length. Only IP PrintWay sections are decoded, since it is the only writer in the sample data. The extended-mode fields (`SMF6BYTD`, `SMF6URI`, `SMF6ACCT`) are implemented from the manual but untested: every sample record is basic mode.
 
@@ -132,6 +133,8 @@ Type 84: not an RMF record; its header has `SMF84SBS`, `SMF84SGN`, `SMF84FL1` an
 Type 80: the layout is in the RACF manual (`data/icha300_v3r1.pdf`, SA23-2288: "Format of SMF type 80 records" and the tables of event codes and relocate section data), not in the SMF manual. Relocate sections (1-byte type/length) and extended-length ones (2-byte) are located by `SMF80REL`/`SMF80RL2`, offsets from `SMF80FLG` (= `rec[0]`). Data of types listed as EBCDIC is stored as text, everything else as hex digits (data type 6, command-related data, is not decoded). `smf080Events`, `smf080Qualifiers` and `smf080Types` were extracted from the manual's tables by script and are loaded into the reference tables for joins.
 
 Type 82: the layout is in the ICSF System Programmer's Guide (`data/csfb200_icsf_spg_hcr77e0.pdf`, SC14-7507, appendix "ICSF SMF records"). Subtypes below 40 have their data right after the 20-byte header; 40 and above start with an ICSF header (not decoded: no sample data). Subtype 20's TOD clocks use the `M` kind (microseconds since 1900), so `SMF82t20_DQAP - SMF82t20_NQAP` is the coprocessor time in microseconds.
+
+Type 92: the three header triplets (subsystem, identification, data) are read at their fixed offsets; subtype 17 has no identification section. Open times (`SMF92OTO`, `SMF92CTO`) are the raw TOD clock and include leap seconds (26 s ahead of the record time in the samples), while `SMF92CTC` is UTC, so `SMF92CTC` is usually earlier than `SMF92CTO`; values are stored as recorded and the quirk is documented in `smf092.go`. Not decoded (no sample data): subtypes 1–9, 12, 13, 15, 50–59.
 
 Type 42 notes:
 - The subtype triplets sit at fixed offsets after the product triplet. `SMF42NT` (number of triplets) is 0 in most real records, so it is ignored.
