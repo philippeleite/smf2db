@@ -81,6 +81,7 @@ smf2db [options] smfFile [dbFile]
 | 21 (tape error statistics by volume) | `smf021.go` | `smf021` |
 | 30 (common address space work) | `smf030.go` | `smf030` + `smf030_{ioac,comp,proc,excp,acct,stor,perf,oper,appc,appc_cum,unix,arm,usag,mers,cntr,zedc}` |
 | 32 (TSO/E user work accounting) | `smf032.go` | `smf032` (header, product, identification), `smf032_cmd` (command sections, subtypes 1 and 2) |
+| 33 (APPC/MVS TP accounting) | `smf033.go` | `smf033` (header, product, address space ID), `smf033_conv` (subtype 2 conversations, with TP names and LUWID) |
 | 41 (DIV / VLF) | `smf041.go` | `smf041`, `smf041_{prod,obja,obju,obji,vlfs}` |
 | 42 (DFSMS statistics) | `smf042.go`, `smf042misc.go`, `smf042io.go` | `smf042` (header + product section, every subtype) and per subtype: 1 `smf042_bmf`, `smf042_bmf_sc`; 2 `smf042_cu`, `smf042_cu_vol`; 3 `smf042_ea`; 4 `smf042_ext`; 5 `smf042_sc`, `smf042_vol`, `smf042_vol_{vtoc,vtix,vvds}`; 6 `smf042_job`, `smf042_ds`; 9 `smf042_x37`; 21 `smf042_mdel`, `smf042_mdel_alias`; 24 `smf042_madd`, `smf042_madd_alias`; 27 `smf042_vtoc` |
 | 60 (VVDS update) | `smf060.go` | `smf060` |
@@ -147,6 +148,8 @@ Type 89: the self-defining section is not a list of 8-byte triplets (`SMF89UDR` 
 Type 90: the header has no subtype field (offset 18 is reserved); the subtype is `SMF90TID`, the first field of the product section, so `rmfSection` (which reads `rec[18:20]`) cannot be used. Subtype 24 stores the WLM service policy as a BLOB (`SMF9024A`, mapped by IWMSVPOL in z/OS MVS Data Areas, possibly split over several records). Not decoded (no sample data): every subtype except 6, 24, 30.
 
 Type 32: the header triplets start at manual offset 24 (`rec[20]`), not 28 as in RMF records. Command sections of subtypes 1 and 2 are name + count (`***OTHER` groups commands not in the TSO/E accounting table); subtypes 3 and 4 (DETAIL, with CPU and I/O per command) are not decoded (no sample data).
+
+Type 33: the conversation ID section locates the partner/local TP name and LUWID sections by offsets from the start of the record (RDW included, so `rec` index = offset − 4); each is a 2-byte length followed by the data. `SMF33RSD` is documented as binary but is a packed date. The two sample records are the two sides of one conversation, so `SMF33CDS`/`SMF33CDR` (HFP byte counts) mirror each other. Not decoded (no sample data): subtype 1, user data field section.
 
 Type 42 notes:
 - The subtype triplets sit at fixed offsets after the product triplet. `SMF42NT` (number of triplets) is 0 in most real records, so it is ignored.

@@ -41,6 +41,7 @@ Elapsed time: 9.29 seconds
 | 21 | Tape error statistics by volume | `smf021` |
 | 30 | Common address space work (job/step accounting) | `smf030` and `smf030_{ioac,comp,proc,excp,acct,stor,perf,oper,appc,appc_cum,unix,arm,usag,mers,cntr,zedc}` |
 | 32 | TSO/E user work accounting: command counts per session (subtypes 1 and 2) | `smf032`, `smf032_cmd` |
+| 33 | APPC/MVS TP accounting: conversations (subtype 2) | `smf033`, `smf033_conv` |
 | 41 | Data-in-virtual objects and VLF statistics | `smf041` and `smf041_{prod,obja,obju,obji,vlfs}` |
 | 42 | DFSMS statistics and configuration (subtypes 1–6, 9, 21, 24, 27) | `smf042` and `smf042_*` (see below) |
 | 60 | VSAM volume data set (VVDS) updated | `smf060` |
@@ -114,7 +115,7 @@ A binary built with `CGO_ENABLED=0` compiles but fails at run time with *"go-sql
    //SYSPRINT DD SYSOUT=*
    //SYSIN    DD *
      INDD(DUMPIN,OPTIONS(DUMP))
-     OUTDD(DUMPOUT,TYPE(4:6,14:18,21,30,32,41,42,60:62,64:66,70:75,78,80,82,84,88:90,92))
+     OUTDD(DUMPOUT,TYPE(4:6,14:18,21,30,32,33,41,42,60:62,64:66,70:75,78,80,82,84,88:90,92))
    /*
    ```
 
@@ -413,10 +414,11 @@ Some records differ from the manual. smf2db follows the data, and [AGENTS.md](AG
 
 smf2db only decodes the record types, subtypes and sections it could check against real SMF records: every offset and data format was compared with sample dumps, not taken from the manuals alone. The manuals have wrong offsets and fields whose real format differs from the documented one (see [AGENTS.md](AGENTS.md)), so a layout that was never seen in real data is not implemented. **Some records are therefore not implemented yet because there was not enough test data for them:**
 
-- **Record types not decoded** (only counted in the summary): every type not in the table above. Some of them, such as 2, 3, 20, 23, 33 to 35, 40, 50, 100, 102, 110, 115, 118, 119, 133 and the vendor types 199 to 255, have sample data and are on the to-do list; the others have none.
+- **Record types not decoded** (only counted in the summary): every type not in the table above. Some of them, such as 2, 3, 20, 23, 34, 35, 40, 50, 100, 102, 110, 115, 118, 119, 133 and the vendor types 199 to 255, have sample data and are on the to-do list; the others have none.
 - **Subtypes and sections not decoded** within supported types:
   - type 6: only the IP PrintWay sections; JES2, JES3, PSF and External Writer records get only the common header row;
   - type 32: subtypes 3 and 4 (DETAIL accounting, with CPU and I/O per command);
+  - type 33: subtype 1 (TP identification and usage) and the user data field section;
   - type 42: only the subtypes in the table above, and within them not the concurrent copy sessions (4), the volume metrics, system I/O and background sections (5), or the synchronous I/O sections (6);
   - type 70: the logical core and tenant resource group sections (1), and the CCA, accelerator and PKCS11 coprocessor sections (2);
   - type 74: subtypes 4 (coupling facility) and 7 to 10, the XCF path sections, the cache device extension sections and the HFS file system sections;
