@@ -108,7 +108,6 @@ SQLite is opened with `_mutex=no`, `_synchronous=off`, `_journal_mode=off`, `_lo
 
 ## Known issues (verified in the code)
 
-- `smf041.go`, "Object UNACCESS" section: the loop advances `objuOff` but reads `rec[objaOff+...]`, so it stores data from the wrong section.
 - Parsers do not check bounds: a truncated or unexpected record causes an index-out-of-range `panic` that stops the program.
 - `-v` prints the version but does not exit; with no arguments it falls through to usage and exits with code 8.
 - `smf030.go` has `IsFirst/IsAdditional/More/IsLast` (subtype 30 records split across several records), but the calls are commented out: split records are stored as independent records.

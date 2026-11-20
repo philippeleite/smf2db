@@ -323,8 +323,8 @@ func smf041Parse(rec []byte) {
 	for i := 0; i < header.SMF41ND2; i++ {
 		_, err = p4Stmt041.Exec(
 			count041,
-			int(binary.BigEndian.Uint32(rec[objaOff+0:objaOff+4])), // SMF41UZU
-			int(binary.BigEndian.Uint32(rec[objaOff+4:objaOff+8])), // SMF41UTU
+			int(binary.BigEndian.Uint32(rec[objuOff+0:objuOff+4])), // SMF41UZU
+			int(binary.BigEndian.Uint32(rec[objuOff+4:objuOff+8])), // SMF41UTU
 		)
 		if err != nil {
 			log.Println(err)
