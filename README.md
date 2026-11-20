@@ -40,6 +40,7 @@ Elapsed time: 9.29 seconds
 | 18 | Rename non-VSAM data set | `smf018`, `smf018_vol` |
 | 21 | Tape error statistics by volume | `smf021` |
 | 30 | Common address space work (job/step accounting) | `smf030` and `smf030_{ioac,comp,proc,excp,acct,stor,perf,oper,appc,appc_cum,unix,arm,usag,mers,cntr,zedc}` |
+| 32 | TSO/E user work accounting: command counts per session (subtypes 1 and 2) | `smf032`, `smf032_cmd` |
 | 41 | Data-in-virtual objects and VLF statistics | `smf041` and `smf041_{prod,obja,obju,obji,vlfs}` |
 | 42 | DFSMS statistics and configuration (subtypes 1–6, 9, 21, 24, 27) | `smf042` and `smf042_*` (see below) |
 | 60 | VSAM volume data set (VVDS) updated | `smf060` |
@@ -60,6 +61,7 @@ Elapsed time: 9.29 seconds
 | 84 | JES monitoring facility: JES2 resource usage (subtype 21) | `smf084`, `smf084_mem`, `smf084_res` |
 | 88 | System Logger: log stream activity (subtype 1) | `smf088` |
 | 89 | Usage data for sub-capacity pricing: product usage (1) and product state (2) | `smf089`, `smf089_usage`, `smf089_isect`, `smf089_state` |
+| 90 | System status: SWITCH SMF (6), VARY WLM policy (24), RESET (30) | `smf090`, `smf090_switch`, `smf090_wlm`, `smf090_reset` |
 | 92 | z/OS UNIX file system activity: file open, close, delete/rename, access count | `smf092`, `smf092_open`, `smf092_close`, `smf092_delete`, `smf092_count` |
 
 Records of any other type are counted in the summary but not stored. Some types, subtypes and sections are not implemented yet because there was not enough test data to verify them; see [Limitations](#limitations). If you have SMF data to share, [contributions are welcome](#contributing-smf-data).
@@ -112,7 +114,7 @@ A binary built with `CGO_ENABLED=0` compiles but fails at run time with *"go-sql
    //SYSPRINT DD SYSOUT=*
    //SYSIN    DD *
      INDD(DUMPIN,OPTIONS(DUMP))
-     OUTDD(DUMPOUT,TYPE(4:6,14:18,21,30,41,42,60:62,64:66,70:75,78,80,82,84,88,89,92))
+     OUTDD(DUMPOUT,TYPE(4:6,14:18,21,30,32,41,42,60:62,64:66,70:75,78,80,82,84,88:90,92))
    /*
    ```
 
@@ -411,9 +413,10 @@ Some records differ from the manual. smf2db follows the data, and [AGENTS.md](AG
 
 smf2db only decodes the record types, subtypes and sections it could check against real SMF records: every offset and data format was compared with sample dumps, not taken from the manuals alone. The manuals have wrong offsets and fields whose real format differs from the documented one (see [AGENTS.md](AGENTS.md)), so a layout that was never seen in real data is not implemented. **Some records are therefore not implemented yet because there was not enough test data for them:**
 
-- **Record types not decoded** (only counted in the summary): every type not in the table above. Some of them, such as 2, 3, 20, 23, 32 to 35, 40, 50, 90, 100, 102, 110, 115, 118, 119, 133 and the vendor types 199 to 255, have sample data and are on the to-do list; the others have none.
+- **Record types not decoded** (only counted in the summary): every type not in the table above. Some of them, such as 2, 3, 20, 23, 33 to 35, 40, 50, 100, 102, 110, 115, 118, 119, 133 and the vendor types 199 to 255, have sample data and are on the to-do list; the others have none.
 - **Subtypes and sections not decoded** within supported types:
   - type 6: only the IP PrintWay sections; JES2, JES3, PSF and External Writer records get only the common header row;
+  - type 32: subtypes 3 and 4 (DETAIL accounting, with CPU and I/O per command);
   - type 42: only the subtypes in the table above, and within them not the concurrent copy sessions (4), the volume metrics, system I/O and background sections (5), or the synchronous I/O sections (6);
   - type 70: the logical core and tenant resource group sections (1), and the CCA, accelerator and PKCS11 coprocessor sections (2);
   - type 74: subtypes 4 (coupling facility) and 7 to 10, the XCF path sections, the cache device extension sections and the HFS file system sections;
@@ -422,6 +425,7 @@ smf2db only decodes the record types, subtypes and sections it could check again
   - type 84: the JES3 subtypes 1 to 10;
   - type 88: subtype 11 (structure alter);
   - type 89: the tenant resource group and tenant intersection sections;
+  - type 90: every subtype except 6, 24 and 30; the subtype 24 WLM service policy is kept as a BLOB (it is mapped by IWMSVPOL, documented in z/OS MVS Data Areas);
   - type 92: subtypes 1 to 9, 12, 13, 15 and the zFS subtypes 50 to 59.
 - Some fields sit past the end of the sections that older z/OS releases write, so they are NULL with the sample data and were only checked against the manual.
 

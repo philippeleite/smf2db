@@ -80,6 +80,7 @@ smf2db [options] smfFile [dbFile]
 | 18 (rename) | `smf018.go` | `smf018`, `smf018_vol` |
 | 21 (tape error statistics by volume) | `smf021.go` | `smf021` |
 | 30 (common address space work) | `smf030.go` | `smf030` + `smf030_{ioac,comp,proc,excp,acct,stor,perf,oper,appc,appc_cum,unix,arm,usag,mers,cntr,zedc}` |
+| 32 (TSO/E user work accounting) | `smf032.go` | `smf032` (header, product, identification), `smf032_cmd` (command sections, subtypes 1 and 2) |
 | 41 (DIV / VLF) | `smf041.go` | `smf041`, `smf041_{prod,obja,obju,obji,vlfs}` |
 | 42 (DFSMS statistics) | `smf042.go`, `smf042misc.go`, `smf042io.go` | `smf042` (header + product section, every subtype) and per subtype: 1 `smf042_bmf`, `smf042_bmf_sc`; 2 `smf042_cu`, `smf042_cu_vol`; 3 `smf042_ea`; 4 `smf042_ext`; 5 `smf042_sc`, `smf042_vol`, `smf042_vol_{vtoc,vtix,vvds}`; 6 `smf042_job`, `smf042_ds`; 9 `smf042_x37`; 21 `smf042_mdel`, `smf042_mdel_alias`; 24 `smf042_madd`, `smf042_madd_alias`; 27 `smf042_vtoc` |
 | 60 (VVDS update) | `smf060.go` | `smf060` |
@@ -100,6 +101,7 @@ smf2db [options] smfFile [dbFile]
 | 84 (JES monitoring facility) | `smf084.go` | `smf084` (header, JES product and general sections) and, for subtype 21, `smf084_mem`, `smf084_res` (only `data/smfdata` has type 84) |
 | 88 (System Logger) | `smf088.go` | `smf088` (one row per log stream: header, product, log stream, event and structure sections) |
 | 89 (usage data) | `smf089.go` | `smf089` (header, product and system ID sections) and `smf089_usage`, `smf089_isect` (1), `smf089_state` (2) |
+| 90 (system status) | `smf090.go` | `smf090` (header, product section) and `smf090_switch` (6), `smf090_wlm` (24), `smf090_reset` (30) |
 | 92 (z/OS UNIX file system activity) | `smf092.go` | `smf092` (header, subsystem and identification sections) and `smf092_open` (10), `smf092_close` (11, 16), `smf092_delete` (14), `smf092_count` (17) |
 
 Type 6 has five writers (External Writer, JES2, JES3, PSF, IP PrintWay) that share the header up to `SMF6SBS`; their sections follow in `SMF6PAD1` bit order, each with its own 2-byte length. Only IP PrintWay sections are decoded, since it is the only writer in the sample data. The extended-mode fields (`SMF6BYTD`, `SMF6URI`, `SMF6ACCT`) are implemented from the manual but untested: every sample record is basic mode.
@@ -141,6 +143,10 @@ Type 92: the three header triplets (subsystem, identification, data) are read at
 Type 88: each subtype 1 record has one log stream, event and structure section, so they share the `smf088` row. The 8-byte byte counts the manual calls EBCDIC (`SMF88LWB`, `SMF88LDB`, `SMF88SWB`, `SMF88SIB`, `SMF88SAB`) are IBM hex floating point: `SMF88LWB` falls between `SMF88LWI` × `SMF88LIB` and `SMF88LWI` × `SMF88LAB` for every sample log stream. Not decoded (no sample data): subtype 11.
 
 Type 89: the self-defining section is not a list of 8-byte triplets (`SMF89UDR` follows the usage triplet), so each triplet is read at its own offset, and only within `SMF89SDL` (36 in the 2017 samples, which end before the tenant triplets; the bytes past it are not triplets). Subtype 2 reuses the usage triplet for its state data sections. The CPU times (`SMF89UCT`, `SMF89USR`, `SMF89UZT`, `SMF89CCT`, `SMF89CZT`) are "long floating point" (HFP) in hundredths of a second; the generator missed that format and the names with spaces (`SMF89_Capacity _Change_Cnt`…), added by hand. Not decoded (no sample data): tenant resource group sections.
+
+Type 90: the header has no subtype field (offset 18 is reserved); the subtype is `SMF90TID`, the first field of the product section, so `rmfSection` (which reads `rec[18:20]`) cannot be used. Subtype 24 stores the WLM service policy as a BLOB (`SMF9024A`, mapped by IWMSVPOL in z/OS MVS Data Areas, possibly split over several records). Not decoded (no sample data): every subtype except 6, 24, 30.
+
+Type 32: the header triplets start at manual offset 24 (`rec[20]`), not 28 as in RMF records. Command sections of subtypes 1 and 2 are name + count (`***OTHER` groups commands not in the TSO/E accounting table); subtypes 3 and 4 (DETAIL, with CPU and I/O per command) are not decoded (no sample data).
 
 Type 42 notes:
 - The subtype triplets sit at fixed offsets after the product triplet. `SMF42NT` (number of triplets) is 0 in most real records, so it is ignored.
