@@ -76,6 +76,7 @@ smf2db [options] smfFile [dbFile]
 | 15 (dataset OUTPUT/UPDAT/…) | `smf015.go` | `smf015`, `smf015_ucb` |
 | 17 (scratch) | `smf017.go` | `smf017`, `smf017_vol` |
 | 18 (rename) | `smf018.go` | `smf018`, `smf018_vol` |
+| 21 (tape error statistics by volume) | `smf021.go` | `smf021` |
 | 30 (common address space work) | `smf030.go` | `smf030` + `smf030_{ioac,comp,proc,excp,acct,stor,perf,oper,appc,appc_cum,unix,arm,usag,mers,cntr,zedc}` |
 | 41 (DIV / VLF) | `smf041.go` | `smf041`, `smf041_{prod,obja,obju,obji,vlfs}` |
 
@@ -133,4 +134,5 @@ SQLite is opened with `_mutex=no`, `_synchronous=off`, `_journal_mode=off`, `_lo
 Record layouts: IBM *z/OS 3.1 MVS System Management Facilities (SMF)*, SA38-0667-60, kept locally at `data/ieag200_v3r1.pdf` (git-ignored). This is the source of truth for every parser offset.
 
 - Search it as text: `pdftotext -layout data/ieag200_v3r1.pdf <out>.txt`, then grep for the chapter heading, e.g. `Record type 41 (X'29') --`.
+- Read field tables with `-raw`, not `-layout`: `-layout` interleaves the Length/Format column with other rows. Find the page with `pdftotext -f N -l N` + grep for a field name, then `pdftotext -f N -l M -raw data/ieag200_v3r1.pdf - | grep -E "^[0-9]+ [0-9A-F]+ SMF21"` prints clean `offset hex name length format` rows.
 - Field tables list `Offsets (dec hex) | Name | Length | Format | Description`. The manual's offsets include the 4-byte RDW (`SMFxLEN` at 0, `SMFxSEG` at 2), so subtract 4 to get the index into `rec`.
