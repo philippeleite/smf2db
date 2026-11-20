@@ -31,9 +31,22 @@ var parseTable = map[int]func([]byte){
 }
 
 func smfParse(rec []byte) {
-	if f, ok := parseTable[int(rec[1])]; ok {
-		f(rec)
+	if len(rec) < 2 {
+		log.Printf("skipping SMF record too short to hold a type (%d bytes)", len(rec))
+		return
 	}
+	f, ok := parseTable[int(rec[1])]
+	if !ok {
+		return
+	}
+	// Parsers index the record by fixed and self-described offsets without bounds checks;
+	// a truncated or malformed record must be skipped instead of aborting the whole run.
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("skipping malformed SMF type %d record (%d bytes): %v", rec[1], len(rec), r)
+		}
+	}()
+	f(rec)
 }
 
 func handleErr(err error) {

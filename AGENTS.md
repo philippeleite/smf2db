@@ -108,7 +108,7 @@ SQLite is opened with `_mutex=no`, `_synchronous=off`, `_journal_mode=off`, `_lo
 
 ## Known issues (verified in the code)
 
-- Parsers do not check bounds: a truncated or unexpected record causes an index-out-of-range `panic` that stops the program.
+- Parsers do not check bounds themselves. `smfParse` recovers from their panics, logs the record type and length, and skips the record; rows already inserted for that record before the panic stay in the database (partial data). The reader loop in `main.go` is not covered: an RDW length below 4 or a spanned record larger than 64 KiB still panics.
 - `-v` prints the version but does not exit; with no arguments it falls through to usage and exits with code 8.
 - `smf030.go` has `IsFirst/IsAdditional/More/IsLast` (subtype 30 records split across several records), but the calls are commented out: split records are stored as independent records.
 - `main.go` only prints (does not abort on) read errors in the middle of a record; a truncated file can produce garbage in the last record.
