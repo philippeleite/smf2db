@@ -50,6 +50,7 @@ Elapsed time: 9.29 seconds
 | 66 | Integrated catalog facility alter activity | `smf066` |
 | 70 | RMF processor activity: CPU, PR/SM partitions, ICSF (subtypes 1 and 2) | `smf070` and `smf070_{cpc,cpu,asid,lpar,lcpu,cpuid,icsf}` |
 | 71 | RMF paging activity | `smf071`, `smf071_paging` |
+| 72 | RMF workload activity (3), storage data (4) and serialization delay (5) | `smf072` and `smf072_*` (see AGENTS.md) |
 
 Records of any other type are counted in the summary but not stored.
 
@@ -101,7 +102,7 @@ A binary built with `CGO_ENABLED=0` compiles but fails at run time with *"go-sql
    //SYSPRINT DD SYSOUT=*
    //SYSIN    DD *
      INDD(DUMPIN,OPTIONS(DUMP))
-     OUTDD(DUMPOUT,TYPE(4:6,14:18,21,30,41,42,60:62,64:66,70,71))
+     OUTDD(DUMPOUT,TYPE(4:6,14:18,21,30,41,42,60:62,64:66,70:72))
    /*
    ```
 
@@ -300,6 +301,26 @@ WHERE trim(p.SMF70LPM) <> 'PHYSICAL'
 GROUP BY r.ID, p.SMF70LPM, c.SMF70CIN
 ORDER BY interval_start, partition, cpu_type;
 ```
+
+### Workload activity (type 72)
+
+Transactions, average response time and CPU service units by WLM service class period (`R723CTET` is in 1024-microsecond units):
+
+```sql
+SELECT trim(w.R723MCNM) AS service_class,
+       p.R723CPER AS period,
+       sum(p.R723CRCP) AS transactions,
+       round(sum(p.R723CTET) * 1.024 / nullif(sum(p.R723CRCP), 0), 1) AS avg_response_ms,
+       round(sum(p.R723CCPU + p.R723CSRB)) AS cpu_service_units
+FROM smf072 r
+JOIN smf072_wlm w USING (ID)
+JOIN smf072_scp p USING (ID)
+WHERE r.SMF72STY = 3
+GROUP BY w.R723MCNM, p.R723CPER
+ORDER BY transactions DESC;
+```
+
+Some IBM field names contain `#` (for example `R723MTV#`); quote them in SQL: `SELECT "R723MTV#" FROM smf072_wlm`.
 
 ### Tapes, printing and catalog activity
 

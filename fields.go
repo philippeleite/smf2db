@@ -17,7 +17,8 @@ type field struct {
 
 type fields []field
 
-// columns returns the column definitions for createTable, in field order.
+// columns returns the column definitions for createTable, in field order. IBM names that contain
+// characters SQL identifiers do not allow (such as R723MTV#) are double-quoted, so queries must quote them too.
 func (f fields) columns() string {
 	cols := make([]string, len(f))
 	for i, fd := range f {
@@ -27,12 +28,16 @@ func (f fields) columns() string {
 			typ = "TEXT"
 		case 'b':
 			typ = "BLOB"
-		case 'f', 'i':
+		case 'f', 'i', 'w':
 			typ = "REAL"
 		case 't', 'h', 'd':
 			typ = "DATETIME"
 		}
-		cols[i] = fd.name + " " + typ
+		name := fd.name
+		if strings.ContainsAny(name, "#@$") {
+			name = `"` + name + `"`
+		}
+		cols[i] = name + " " + typ
 	}
 	return strings.Join(cols, ", ")
 }
@@ -42,6 +47,7 @@ func (f fields) columns() string {
 //	u unsigned binary   s signed binary    c EBCDIC text      x hex digits (packed without sign, raw codes)
 //	b raw bytes         t TOD clock        f IBM hex float    p packed decimal integer (0..9 digits + sign)
 //	h packed time 0hhmmssF                 d packed date 0cyydddF                    i packed interval mmsstttF, in seconds
+//	w unsigned binary wider than 8 bytes (such as 16-byte sums of squares), as an approximate float
 func (f fields) values(s section) []interface{} {
 	v := make([]interface{}, len(f))
 	for i, fd := range f {
@@ -64,6 +70,12 @@ func (f fields) values(s section) []interface{} {
 			v[i] = todtime(b)
 		case 'f':
 			v[i] = hfp(b)
+		case 'w':
+			w := 0.0
+			for _, c := range b {
+				w = w*256 + float64(c)
+			}
+			v[i] = w
 		case 'p':
 			v[i] = packedInt(b)
 		case 'h':

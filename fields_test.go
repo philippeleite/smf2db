@@ -28,6 +28,10 @@ func TestFieldsValues(t *testing.T) {
 		{"X", 16, 'x', 3},
 		{"PAST", 19, 'u', 4},
 	}
+	wide := fields{{"W", 0, 'w', 16}}.values(section{0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 2})
+	if wide[0] != 18446744073709551618.0 { // 2^64 + 2
+		t.Errorf("wide: got %v", wide[0])
+	}
 	s := section{
 		0xff, 0xff, 0xd7, 0xc4, // -10300
 		0x01, 0x33, 0x00, 0x0f, // 13:30:00

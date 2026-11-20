@@ -7,8 +7,9 @@ Usage:
 FIRST_LINE/LAST_LINE delimit one section's rows in manual.txt (1-based, last excluded); find them with
 grep -n on the section headings. Rows look like "12 C SMF70SER 3 packed CPU serial number". When the
 manual's decimal and hex offsets disagree, the one that continues the sequence is used and the row is
-annotated. Reserved fields and redefinitions are skipped. Review the output: TOD/STCK times, signed
-offsets and binary data documented as EBCDIC need their kind changed by hand.
+annotated. Reserved fields and redefinitions are skipped. 8-byte binary fields described as STCK or TOD
+format become TOD times (unless they are offsets). Review the output: signed fields, times whose description
+wraps before the word STCK, and binary data documented as EBCDIC need their kind changed by hand.
 """
 import re
 import sys
@@ -35,7 +36,11 @@ for line in lines:
         out.append(f'\t// skipped {name} at {off}: redefines an earlier field')
         continue
     kind = kinds[fmt]
-    if kind == 'u' and n not in (1, 2, 3, 4, 8):
+    if kind == 'u' and n == 8 and re.search(r'STCK|TOD format', desc) and 'ffset' not in desc:
+        kind = 't'  # absolute TOD clock time (offsets in STCK format stay binary)
+    elif kind == 'u' and n > 8:
+        kind = 'w'  # wide counters, such as 16-byte sums of squares
+    elif kind == 'u' and n not in (1, 2, 3, 4, 8):
         kind = 'b'
     seen.add(name)
     expect = off + n
