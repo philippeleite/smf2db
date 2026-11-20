@@ -61,7 +61,7 @@ func smf042Parse(rec []byte) {
 
 // smf042Product returns the product section (located by the triplet every subtype has at offset 28).
 func smf042Product(rec []byte) (section, int) {
-	off, length, n := smf042TripletAt(rec, 24)
+	off, length, n := tripletAt(rec, 24)
 	return section(rec).sub(off, length), n
 }
 
@@ -70,10 +70,12 @@ func smf042Product(rec []byte) (section, int) {
 // the section length and the number of sections; n is 0 when the section is absent. SMF42NT is not
 // used: most records set it to 0 even though the triplets are present.
 func smf042Triplet(rec []byte, i int) (off, length, n int) {
-	return smf042TripletAt(rec, 32+8*i)
+	return tripletAt(rec, 32+8*i)
 }
 
-func smf042TripletAt(rec []byte, at int) (off, length, n int) {
+// tripletAt reads the triplet at rec[at:at+8] (4-byte offset from the RDW, 2-byte length, 2-byte number)
+// and returns the offset within rec. Used by every record type with self-defining sections.
+func tripletAt(rec []byte, at int) (off, length, n int) {
 	t := section(rec).sub(at, 8)
 	off, length, n = t.num(0, 4)-4, t.num(4, 2), t.num(6, 2)
 	if off < 0 || n == 0 {

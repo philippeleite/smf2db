@@ -48,6 +48,7 @@ Elapsed time: 9.29 seconds
 | 64 | VSAM component or cluster status (CLOSE, EOV, out of space) | `smf064`, `smf064_ext` |
 | 65 | Integrated catalog facility delete activity | `smf065` |
 | 66 | Integrated catalog facility alter activity | `smf066` |
+| 70 | RMF processor activity: CPU, PR/SM partitions, ICSF (subtypes 1 and 2) | `smf070` and `smf070_{cpc,cpu,asid,lpar,lcpu,cpuid,icsf}` |
 
 Records of any other type are counted in the summary but not stored.
 
@@ -99,7 +100,7 @@ A binary built with `CGO_ENABLED=0` compiles but fails at run time with *"go-sql
    //SYSPRINT DD SYSOUT=*
    //SYSIN    DD *
      INDD(DUMPIN,OPTIONS(DUMP))
-     OUTDD(DUMPOUT,TYPE(4:6,14:18,21,30,41,42,60:62,64:66))
+     OUTDD(DUMPOUT,TYPE(4:6,14:18,21,30,41,42,60:62,64:66,70))
    /*
    ```
 
@@ -278,6 +279,25 @@ FROM smf042_madd
 GROUP BY 1, 2, 3
 ORDER BY updates DESC
 LIMIT 20;
+```
+
+### Processor activity (type 70)
+
+Busy percentage of each PR/SM partition's logical processors, by CPU type and RMF interval (`SMF70PDT` is in microseconds, `SMF70INT` in seconds):
+
+```sql
+SELECT substr(r.SMF70DAT, 1, 10) || ' ' || substr(r.SMF70IST, 12, 5) AS interval_start,
+       trim(p.SMF70LPM) AS partition,
+       trim(c.SMF70CIN) AS cpu_type,
+       count(*) AS logical_cpus,
+       round(100.0 * sum(l.SMF70PDT) / 1e6 / (r.SMF70INT * count(*)), 1) AS busy_pct
+FROM smf070 r
+JOIN smf070_lcpu l USING (ID)
+JOIN smf070_lpar p ON p.ID = l.ID AND p.SMF70LPN = l.SMF70LPN
+JOIN smf070_cpuid c ON c.ID = l.ID AND c.SMF70CIX = l.SMF70CIX
+WHERE trim(p.SMF70LPM) <> 'PHYSICAL'
+GROUP BY r.ID, p.SMF70LPM, c.SMF70CIN
+ORDER BY interval_start, partition, cpu_type;
 ```
 
 ### Tapes, printing and catalog activity

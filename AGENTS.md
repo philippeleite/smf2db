@@ -30,6 +30,7 @@ Tests:
 - `main_test.go`: `smfParse` skips a record whose parser panics.
 - `smf006_test.go`: `SMF6ACCT` decoding, using the example from the manual.
 - `smf042_test.go`: `section` bounds handling and the `smf042Chain` backward-pointer guard.
+- `fields_test.go`: `fields` decoding (signed, packed time/interval/integer, hex digits, short section) and IBM hex floating point.
 - `smftest_test.go` (`TestSmfTestFile`): runs `main()` on `data/smftest.rdw` (363 MB, 815,993 records, 2017) and checks the per-type counts printed by smf2db, and the row count of every parsed type's main table (`smfNNN`), against the RECORDS WRITTEN column of the IFASMFDP report in `data/smftest.txt`. It also fails if smf2db writes anything to the log (skipped record, failed `Prepare`/`Exec`), which catches child tables left empty by a broken statement. It skips when those files are missing or SQLite has no CGO. It only checks counts, not field values, and only for types registered in `parseTable`.
 - `data/smfdata` (26 MB, 2019) is another local sample, with no reference report.
 
@@ -87,6 +88,7 @@ smf2db [options] smfFile [dbFile]
 | 64 (VSAM component or cluster status) | `smf064.go` | `smf064`, `smf064_ext` |
 | 65 (catalog delete) | `smfcatalog.go` | `smf065` |
 | 66 (catalog alter) | `smfcatalog.go` | `smf066` |
+| 70 (RMF processor activity) | `smf070.go`, `rmf.go` | `smf070` (header + RMF product section) and per subtype: 1 `smf070_cpc`, `smf070_cpu`, `smf070_asid`, `smf070_lpar`, `smf070_lcpu`, `smf070_cpuid`; 2 `smf070_icsf` |
 
 Type 6 has five writers (External Writer, JES2, JES3, PSF, IP PrintWay) that share the header up to `SMF6SBS`; their sections follow in `SMF6PAD1` bit order, each with its own 2-byte length. Only IP PrintWay sections are decoded, since it is the only writer in the sample data. The extended-mode fields (`SMF6BYTD`, `SMF6URI`, `SMF6ACCT`) are implemented from the manual but untested: every sample record is basic mode.
 
@@ -95,6 +97,13 @@ Type 60 stores the raw VVR/NVR in `SMF60CRC` (BLOB, length in its first two byte
 Type 62: after the 10-byte volume entries come the 24-byte SMS classes (always present in the samples, zeros when `SMF62IND` bit 4 is off; stored only when it is on) and the statistics section. The 66-byte encryption block between them is assumed to exist only when bit 5 (encrypted) is on, which no sample record has (see the `shortcut:` comment). Sample statistics sections are 12 bytes, so `SMF62DET`, `SMF62DKL`, `SMF62JobID` and `SMF62SysplexName` are NULL there.
 
 Type 64: 26-byte extent entries follow `SMF64ESL`, then the statistics section with its own length (`SMF64SLN`); bytes after that length are ignored (records with `SMF64RIN` X'01' have no extents but end with 26 zero bytes). The "change since OPEN" fields (`SMF64DIL`…`SMF64DEP`, `SMF64DAU`) are signed; `SMF64CHR` is documented as EBCDIC but is a binary RBA/CI.
+
+Type 70 notes:
+- Sections with many fields are declared as `fields` tables (`fields.go`) generated from the manual with `tools/genfields.py`, then reviewed by hand (`SMF70HOF` signed, `SMF70GJT`/`SMF70_IPL_TIME` TOD, `SMF70SER` hex digits). Three offsets in the manual are inconsistent (`SMF70I01`, `SMF70P07`, `SMF70P11`); the generator picks the one that continues the sequence and the table keeps a comment.
+- `rmf.go` has the RMF product section, common to types 70–79 (`rmfProductFields(prefix)`). The reassembly area of broken large records is not decoded; `SMFnnRAN` shows whether a record is one.
+- Logical processors are linked to their partition by `SMF70LPN` (each partition is followed by its `SMF70BDN` processors), and to the CPU type name by `SMF70CIX`, which is also stored, 1-based, in `smf070_cpuid`.
+- Durations are stored as recorded: `SMF70WAT`/`SMF70PAT` in TOD units (bit 51 = 1 µs, divide by 4096 for µs), `SMF70PDT`/`SMF70EDT`/`SMF70ONT` in microseconds. ICSF counters (`R702*`) are IBM hex floating point, stored as REAL.
+- Not decoded (absent from the samples): subtype 1 logical core and tenant resource group sections; subtype 2 CCA, accelerator and PKCS11 sections.
 
 Type 42 notes:
 - The subtype triplets sit at fixed offsets after the product triplet. `SMF42NT` (number of triplets) is 0 in most real records, so it is ignored.
@@ -132,7 +141,7 @@ Conventions:
 - **Column names = IBM field names** (`SMF30JBN`, `JFCBDSNM`, …). Each `Exec` argument carries a comment with the field name. Keep it that way: it is the only documentation of the mapping.
 - **Binary integers**: `binary.BigEndian.Uint16/32/64`, 3-byte fields with `b3toInt`, 1-byte fields with `int(rec[n])`.
 - **Dates/times** become text `YYYY-MM-DD HH:MM:SS.mmm`: `smfdate` (packed `0cyydddF`) returns the date only, `smftime` (hundredths of a second since midnight) returns the time only with date `0000-00-00`. A zero date/time becomes `0000-00-00 00:00:00.000`. `filedate` handles the 3-byte JFCB date.
-- **Newer helpers** (used by `smf021.go`, `smf042*.go`; prefer them for new parsers): `createTable(name, columns)` creates the table and prepares an INSERT with one placeholder per column (no hand-counted `?` lists); `insert(stmt, args...)` executes and logs; `section` (in `smf042.go`) reads fields with bounds checks, returning NULL for a field past the end of a shorter section; `todtime` converts 8-byte TOD clock values.
+- **Newer helpers** (used by `smf021.go`, `smf042*.go`; prefer them for new parsers): `createTable(name, columns)` creates the table and prepares an INSERT with one placeholder per column (no hand-counted `?` lists); `insert(stmt, args...)` executes and logs; `section` and `tripletAt` (in `smf042.go`) read fields with bounds checks, returning NULL for a field past the end of a shorter section, and locate sections by triplet; `todtime`/`stcketime` convert TOD/STCKE clock values. For sections with dozens of fields, declare a `fields` table (`fields.go`: name, offset, kind, length) and use `.columns()` / `.values(section)`; generate it from the manual with `tools/genfields.py` (see its docstring) and review the kinds by hand.
 - **Text**: `ebcdic(b)` converts a field and returns it as a string (newer parsers use it). `bcd2asc` converts **EBCDIC → ASCII** (the name is misleading: it is not BCD) by modifying the buffer. Strings keep their space padding; nothing is trimmed.
 - **Optional fields** (sections that may be absent or depend on flags): an `interface{}` variable holding `nil`, stored as NULL; the column has no `NOT NULL`. See `smf014.go` (DASD vs. tape, extended sections) and `smf030.go` (`SMF30CDO`/`SMF30USO` only when the header is long enough).
 - **Errors**: SQL failures are only logged (`log.Println`/`log.Printf`) and processing continues; only open/file errors stop the program (`handleErr` → `log.Fatalln`). Parsers share a global `err` variable.
