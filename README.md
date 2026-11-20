@@ -53,6 +53,7 @@ Elapsed time: 9.29 seconds
 | 72 | RMF workload activity (3), storage data (4) and serialization delay (5) | `smf072` and `smf072_*` (see AGENTS.md) |
 | 73 | RMF channel path activity | `smf073`, `smf073_ctl`, `smf073_chp`, `smf073_ext` |
 | 74 | RMF device (1), XCF (2), OMVS kernel (3), cache subsystem (5) and HFS (6) activity | `smf074` and `smf074_{devctl,dev,xcfctl,xcfsys,xcfmbr,omvs,cachectl,cachedev,cachestat,raid,hfsglobal,hfsbuf}` |
+| 75 | RMF page data set activity | `smf075`, `smf075_page` |
 
 Records of any other type are counted in the summary but not stored.
 
@@ -104,7 +105,7 @@ A binary built with `CGO_ENABLED=0` compiles but fails at run time with *"go-sql
    //SYSPRINT DD SYSOUT=*
    //SYSIN    DD *
      INDD(DUMPIN,OPTIONS(DUMP))
-     OUTDD(DUMPOUT,TYPE(4:6,14:18,21,30,41,42,60:62,64:66,70:74))
+     OUTDD(DUMPOUT,TYPE(4:6,14:18,21,30,41,42,60:62,64:66,70:75))
    /*
    ```
 

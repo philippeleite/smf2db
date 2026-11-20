@@ -93,6 +93,7 @@ smf2db [options] smfFile [dbFile]
 | 72 (RMF workload activity, storage, serialization delay) | `smf072.go`, `rmf.go` | `smf072` (header + RMF product section) and per subtype: 3 `smf072_wlm`, `smf072_served`, `smf072_rg`, `smf072_scp`, `smf072_rtd`, `smf072_wrm`, `smf072_dn`; 4 `smf072_stor`, `smf072_swap`; 5 `smf072_ser`, `smf072_cms`, `smf072_local`, `smf072_cmlo`, `smf072_cmlr`, `smf072_latch`, `smf072_enq`, `smf072_qscan` |
 | 73 (RMF channel path activity) | `smf073.go`, `rmf.go` | `smf073` (header + RMF product section), `smf073_ctl`, `smf073_chp`, `smf073_ext` |
 | 74 (RMF activity of several resources) | `smf074.go`, `rmf.go` | `smf074` (header + RMF product section) and per subtype: 1 `smf074_devctl`, `smf074_dev`; 2 `smf074_xcfctl`, `smf074_xcfsys`, `smf074_xcfmbr`; 3 `smf074_omvs`; 5 `smf074_cachectl`, `smf074_cachedev`, `smf074_cachestat`, `smf074_raid`; 6 `smf074_hfsglobal`, `smf074_hfsbuf` |
+| 75 (RMF page data set activity) | `smf075.go`, `rmf.go` | `smf075` (header + RMF product section), `smf075_page` (only `data/smfdata` has type 75) |
 
 Type 6 has five writers (External Writer, JES2, JES3, PSF, IP PrintWay) that share the header up to `SMF6SBS`; their sections follow in `SMF6PAD1` bit order, each with its own 2-byte length. Only IP PrintWay sections are decoded, since it is the only writer in the sample data. The extended-mode fields (`SMF6BYTD`, `SMF6URI`, `SMF6ACCT`) are implemented from the manual but untested: every sample record is basic mode.
 
