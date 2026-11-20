@@ -17,9 +17,19 @@ Guide for AI agents (and humans) working in this repository.
 # This environment defaults to CGO_ENABLED=0: the binary builds, but fails at runtime when opening the database.
 CGO_ENABLED=1 go build -o smf2db .
 
-go test ./...      # only tests the helpers in zutil.go
+# Without gcc, zig works as the C compiler:
+CGO_ENABLED=1 CC="zig cc -target x86_64-windows-gnu" go build -o smf2db .
+
+go test ./...      # unit tests; the SMF file test is skipped without CGO
+CGO_ENABLED=1 CC="zig cc -target x86_64-windows-gnu" go test ./...   # full run, ~7 s
 go vet ./...
 ```
+
+Tests:
+- `zutil_test.go`: date/time/EBCDIC helpers.
+- `main_test.go`: `smfParse` skips a record whose parser panics.
+- `smftest_test.go` (`TestSmfTestFile`): runs `main()` on `data/smftest.rdw` (363 MB, 815,993 records, 2017) and checks the per-type counts printed by smf2db, and the row count of every parsed type's main table (`smfNNN`), against the RECORDS WRITTEN column of the IFASMFDP report in `data/smftest.txt`. It skips when those files are missing or SQLite has no CGO. It only checks counts, not field values, and only for types registered in `parseTable`.
+- `data/smfdata` (26 MB, 2019) is another local sample, with no reference report.
 
 Usage:
 
@@ -112,8 +122,11 @@ SQLite is opened with `_mutex=no`, `_synchronous=off`, `_journal_mode=off`, `_lo
 - `-v` prints the version but does not exit; with no arguments it falls through to usage and exits with code 8.
 - `smf030.go` has `IsFirst/IsAdditional/More/IsLast` (subtype 30 records split across several records), but the calls are commented out: split records are stored as independent records.
 - `main.go` only prints (does not abort on) read errors in the middle of a record; a truncated file can produce garbage in the last record.
-- Tests only cover `zutil.go`; there are no parser tests and no sample SMF file in the repository.
+- No test checks parsed field values against the manual; the sample SMF files live only in the git-ignored `data/`.
 
 ## Reference
 
-Record layouts: IBM *z/OS MVS System Management Facilities (SMF)* (SA38-0667), the chapter for each type. When checking offsets, remember to subtract 4 (RDW) from the documentation's decimal offsets.
+Record layouts: IBM *z/OS 3.1 MVS System Management Facilities (SMF)*, SA38-0667-60, kept locally at `data/ieag200_v3r1.pdf` (git-ignored). This is the source of truth for every parser offset.
+
+- Search it as text: `pdftotext -layout data/ieag200_v3r1.pdf <out>.txt`, then grep for the chapter heading, e.g. `Record type 41 (X'29') --`.
+- Field tables list `Offsets (dec hex) | Name | Length | Format | Description`. The manual's offsets include the 4-byte RDW (`SMFxLEN` at 0, `SMFxSEG` at 2), so subtract 4 to get the index into `rec`.
