@@ -23,8 +23,7 @@ var (
 )
 
 func smf070Init() {
-	pStmt070 = createTable("smf070", `ID INT NOT NULL, SMF70TME DATETIME NOT NULL, SMF70DTE DATETIME NOT NULL,
-		SMF70SID TEXT NOT NULL, SMF70SSI TEXT NOT NULL, SMF70STY INT NOT NULL, `+rmfProductFields("SMF70").columns())
+	pStmt070 = createTable("smf070", rmfColumns("SMF70"))
 	pStmt070Cpc = createTable("smf070_cpc", "ID INT NOT NULL, "+smf070CpcFields.columns())
 	pStmt070Cpu = createTable("smf070_cpu", "ID INT NOT NULL, "+smf070CpuFields.columns())
 	pStmt070Asid = createTable("smf070_asid", "ID INT NOT NULL, "+smf070AsidFields.columns())
@@ -40,9 +39,7 @@ func smf070Parse(rec []byte) {
 	s := section(rec)
 	count070 += 1
 	id := count070
-	off, length, _ := tripletAt(rec, 24)
-	insert(pStmt070, append([]interface{}{id, s.time(2), s.date(6), s.text(10, 4), s.text(14, 4), s.u16(18)},
-		rmfProductFields("SMF70").values(s.sub(off, length))...)...)
+	insert(pStmt070, rmfRow(rec, id, "SMF70")...)
 
 	// each calls f for each section located by the triplet at rec[at:], with its 1-based position
 	each := func(at int, f func(k int, sec section)) {

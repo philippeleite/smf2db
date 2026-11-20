@@ -1,5 +1,22 @@
 package main
 
+// rmfColumns returns the columns of an RMF record's main table: the SMF header and the RMF product
+// section. p is the field name prefix, such as "SMF70".
+func rmfColumns(p string) string {
+	return "ID INT NOT NULL, " + p + "TME DATETIME NOT NULL, " + p + "DTE DATETIME NOT NULL, " +
+		p + "SID TEXT NOT NULL, " + p + "SSI TEXT NOT NULL, " + p + "STY INT NOT NULL, " +
+		rmfProductFields(p).columns()
+}
+
+// rmfRow decodes the values matching rmfColumns. The product section is located by the triplet at
+// offset 28, the same in every RMF record type.
+func rmfRow(rec []byte, id int, p string) []interface{} {
+	s := section(rec)
+	off, length, _ := tripletAt(rec, 24)
+	return append([]interface{}{id, s.time(2), s.date(6), s.text(10, 4), s.text(14, 4), s.u16(18)},
+		rmfProductFields(p).values(s.sub(off, length))...)
+}
+
 // rmfProductFields returns the layout of the RMF product section, which is the same in every RMF
 // record type (70 to 79); p is the field name prefix, such as "SMF70". The reassembly area of broken
 // records is not decoded; RAN tells whether the record is part of a broken large record.

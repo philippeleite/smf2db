@@ -49,6 +49,7 @@ Elapsed time: 9.29 seconds
 | 65 | Integrated catalog facility delete activity | `smf065` |
 | 66 | Integrated catalog facility alter activity | `smf066` |
 | 70 | RMF processor activity: CPU, PR/SM partitions, ICSF (subtypes 1 and 2) | `smf070` and `smf070_{cpc,cpu,asid,lpar,lcpu,cpuid,icsf}` |
+| 71 | RMF paging activity | `smf071`, `smf071_paging` |
 
 Records of any other type are counted in the summary but not stored.
 
@@ -100,7 +101,7 @@ A binary built with `CGO_ENABLED=0` compiles but fails at run time with *"go-sql
    //SYSPRINT DD SYSOUT=*
    //SYSIN    DD *
      INDD(DUMPIN,OPTIONS(DUMP))
-     OUTDD(DUMPOUT,TYPE(4:6,14:18,21,30,41,42,60:62,64:66,70))
+     OUTDD(DUMPOUT,TYPE(4:6,14:18,21,30,41,42,60:62,64:66,70,71))
    /*
    ```
 

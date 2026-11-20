@@ -89,6 +89,7 @@ smf2db [options] smfFile [dbFile]
 | 65 (catalog delete) | `smfcatalog.go` | `smf065` |
 | 66 (catalog alter) | `smfcatalog.go` | `smf066` |
 | 70 (RMF processor activity) | `smf070.go`, `rmf.go` | `smf070` (header + RMF product section) and per subtype: 1 `smf070_cpc`, `smf070_cpu`, `smf070_asid`, `smf070_lpar`, `smf070_lcpu`, `smf070_cpuid`; 2 `smf070_icsf` |
+| 71 (RMF paging activity) | `smf071.go`, `rmf.go` | `smf071` (header + RMF product section), `smf071_paging` |
 
 Type 6 has five writers (External Writer, JES2, JES3, PSF, IP PrintWay) that share the header up to `SMF6SBS`; their sections follow in `SMF6PAD1` bit order, each with its own 2-byte length. Only IP PrintWay sections are decoded, since it is the only writer in the sample data. The extended-mode fields (`SMF6BYTD`, `SMF6URI`, `SMF6ACCT`) are implemented from the manual but untested: every sample record is basic mode.
 
@@ -100,9 +101,10 @@ Type 64: 26-byte extent entries follow `SMF64ESL`, then the statistics section w
 
 Type 70 notes:
 - Sections with many fields are declared as `fields` tables (`fields.go`) generated from the manual with `tools/genfields.py`, then reviewed by hand (`SMF70HOF` signed, `SMF70GJT`/`SMF70_IPL_TIME` TOD, `SMF70SER` hex digits). Three offsets in the manual are inconsistent (`SMF70I01`, `SMF70P07`, `SMF70P11`); the generator picks the one that continues the sequence and the table keeps a comment.
-- `rmf.go` has the RMF product section, common to types 70–79 (`rmfProductFields(prefix)`). The reassembly area of broken large records is not decoded; `SMFnnRAN` shows whether a record is one.
+- `rmf.go` has the RMF product section, common to types 70–79 (`rmfProductFields(prefix)`), and `rmfColumns`/`rmfRow` for the main table of any RMF type (SMF header + product section); new RMF types should use them, as `smf071.go` does. The reassembly area of broken large records is not decoded; `SMFnnRAN` shows whether a record is one.
 - Logical processors are linked to their partition by `SMF70LPN` (each partition is followed by its `SMF70BDN` processors), and to the CPU type name by `SMF70CIX`, which is also stored, 1-based, in `smf070_cpuid`.
 - Durations are stored as recorded: `SMF70WAT`/`SMF70PAT` in TOD units (bit 51 = 1 µs, divide by 4096 for µs), `SMF70PDT`/`SMF70EDT`/`SMF70ONT` in microseconds. ICSF counters (`R702*`) are IBM hex floating point, stored as REAL.
+- Type 71 has one paging data section per record (`smf071_paging`); only `data/smfdata` contains type 71 records. Its HFP averages (`SMF71LVS`) match the integer ones (`SMF71AVS`), which confirms the HFP conversion on real data. The swap placement section is not decoded (no valid values since z/OS V1R13).
 - Not decoded (absent from the samples): subtype 1 logical core and tenant resource group sections; subtype 2 CCA, accelerator and PKCS11 sections.
 
 Type 42 notes:
