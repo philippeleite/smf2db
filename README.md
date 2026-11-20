@@ -56,6 +56,7 @@ Elapsed time: 9.29 seconds
 | 75 | RMF page data set activity | `smf075`, `smf075_page` |
 | 78 | RMF virtual storage (2) and I/O queuing (3) activity | `smf078` and `smf078_{common,cfgctl,cfg,ioq,ioqglob,iop,hpav}` |
 | 80 | RACF processing (logons, resource access, profile changes) | `smf080`, `smf080_reloc`, `smf080_reloc2`, plus reference tables `smf080_events`, `smf080_qualifiers`, `smf080_types` |
+| 82 | ICSF: cryptographic processor processing times (subtype 20) | `smf082`, `smf082_t20` |
 | 84 | JES monitoring facility: JES2 resource usage (subtype 21) | `smf084`, `smf084_mem`, `smf084_res` |
 
 Records of any other type are counted in the summary but not stored.
@@ -108,7 +109,7 @@ A binary built with `CGO_ENABLED=0` compiles but fails at run time with *"go-sql
    //SYSPRINT DD SYSOUT=*
    //SYSIN    DD *
      INDD(DUMPIN,OPTIONS(DUMP))
-     OUTDD(DUMPOUT,TYPE(4:6,14:18,21,30,41,42,60:62,64:66,70:75,78,80,84))
+     OUTDD(DUMPOUT,TYPE(4:6,14:18,21,30,41,42,60:62,64:66,70:75,78,80,82,84))
    /*
    ```
 
@@ -399,7 +400,7 @@ SELECT name, type FROM pragma_table_info('smf042_ds');
 
 ## Reference
 
-Record layouts come from IBM **z/OS MVS System Management Facilities (SMF)**, SA38-0667 (z/OS 3.1 edition), except type 80 (RACF), which comes from **z/OS Security Server RACF Macros and Interfaces**, SA23-2288. They describe every field, its units and its flag bits. The manuals are not distributed with this project.
+Record layouts come from IBM **z/OS MVS System Management Facilities (SMF)**, SA38-0667 (z/OS 3.1 edition), except type 80 (RACF), which comes from **z/OS Security Server RACF Macros and Interfaces**, SA23-2288, and type 82 (ICSF), from **z/OS Cryptographic Services ICSF System Programmer's Guide**, SC14-7507. They describe every field, its units and its flag bits. The manuals are not distributed with this project.
 
 Some records differ from the manual. smf2db follows the data, and [AGENTS.md](AGENTS.md) lists each known difference. For example, many type 42 records leave the triplet count at 0, and some fields documented as EBCDIC actually contain binary data.
 
