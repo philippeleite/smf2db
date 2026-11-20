@@ -147,6 +147,10 @@ Type 42 notes:
 
 `smf015.go` is a copy of `smf014.go` with renamed identifiers (same layout). **A fix in one almost always applies to the other.**
 
+## Implementation policy: verified against sample data
+
+Only implement record types, subtypes and sections that have records in the sample files (`data/smftest.rdw`, `data/smfdata`), and check every new parser against them: offsets, section lengths, value ranges, cross-checks between fields (min ≤ avg ≤ max, counts that must match another field, index joins). The manuals contain wrong offsets and misdocumented formats, so an unverified layout is not added. Before starting a type, count its records, subtypes and section triplets in both files; types and sections with no data are skipped and listed in the README "Limitations" section, which tells users that they are missing for lack of test data and invites contributions of SMF data ("Contributing SMF data"). Keep that list current when a type is added. When a type's SMF manual chapter only points to another product manual (as for types 80 and 82), add that manual to `data/` first.
+
 ## Parser pattern (follow it when adding a new type)
 
 Every `smfNNN.go` follows the same template. Copy the closest file (`smf017.go` is the simplest; `smf041.go`/`smf030.go` for records with triplets):

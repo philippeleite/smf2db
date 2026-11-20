@@ -61,7 +61,7 @@ Elapsed time: 9.29 seconds
 | 88 | System Logger: log stream activity (subtype 1) | `smf088` |
 | 92 | z/OS UNIX file system activity: file open, close, delete/rename, access count | `smf092`, `smf092_open`, `smf092_close`, `smf092_delete`, `smf092_count` |
 
-Records of any other type are counted in the summary but not stored.
+Records of any other type are counted in the summary but not stored. Some types, subtypes and sections are not implemented yet because there was not enough test data to verify them; see [Limitations](#limitations). If you have SMF data to share, [contributions are welcome](#contributing-smf-data).
 
 Type 42 subtypes and their tables:
 
@@ -408,11 +408,40 @@ Some records differ from the manual. smf2db follows the data, and [AGENTS.md](AG
 
 ## Limitations
 
-- Only the record types listed above are decoded. Within some types, not every section is decoded:
-  - type 6: only the IP PrintWay sections (JES2, JES3, PSF and External Writer records get only the common header row);
-  - type 42: only the subtypes in the table above, and within them not the concurrent copy sessions (4), the volume metrics, system I/O and background sections (5), or the synchronous I/O sections (6).
+smf2db only decodes the record types, subtypes and sections it could check against real SMF records: every offset and data format was compared with sample dumps, not taken from the manuals alone. The manuals have wrong offsets and fields whose real format differs from the documented one (see [AGENTS.md](AGENTS.md)), so a layout that was never seen in real data is not implemented. **Some records are therefore not implemented yet because there was not enough test data for them:**
+
+- **Record types not decoded** (only counted in the summary): every type not in the table above. Some of them, such as 2, 3, 20, 23, 32 to 35, 40, 50, 89, 90, 100, 102, 110, 115, 118, 119, 133 and the vendor types 199 to 255, have sample data and are on the to-do list; the others have none.
+- **Subtypes and sections not decoded** within supported types:
+  - type 6: only the IP PrintWay sections; JES2, JES3, PSF and External Writer records get only the common header row;
+  - type 42: only the subtypes in the table above, and within them not the concurrent copy sessions (4), the volume metrics, system I/O and background sections (5), or the synchronous I/O sections (6);
+  - type 70: the logical core and tenant resource group sections (1), and the CCA, accelerator and PKCS11 coprocessor sections (2);
+  - type 74: subtypes 4 (coupling facility) and 7 to 10, the XCF path sections, the cache device extension sections and the HFS file system sections;
+  - type 78: the private area and private area subpool sections (2);
+  - type 82: every subtype except 20;
+  - type 84: the JES3 subtypes 1 to 10;
+  - type 88: subtype 11 (structure alter);
+  - type 92: subtypes 1 to 9, 12, 13, 15 and the zFS subtypes 50 to 59.
+- Some fields sit past the end of the sections that older z/OS releases write, so they are NULL with the sample data and were only checked against the manual.
+
+Other limitations:
+
 - Records are processed in a single thread, and the whole database is rebuilt on each run. There is no incremental load.
 - Spanned records larger than 64 KB are not supported.
+- Large RMF records that RMF splits into several "broken" records are not reassembled.
+
+## Contributing SMF data
+
+**Contributions of SMF data are welcome.** More sample records are the fastest way to add record types and sections listed under [Limitations](#limitations), and to check existing parsers against other z/OS releases and configurations. If you can share an SMF dump, please open an issue on GitHub.
+
+Most useful:
+
+- records of the types and subtypes that are not decoded yet, or records from newer z/OS releases (2.4, 2.5, 3.1) than the current samples (2.1 and 2.3);
+- the dump in binary with RDWs, as described in [Getting SMF data from z/OS](#getting-smf-data-from-z-os), together with the IFASMFDP `SYSPRINT` report of the dump job, which the end-to-end test uses to check record counts;
+- a few records per type and subtype are enough; it does not need to be a large dump.
+
+SMF data identifies people and systems: user IDs and names, job and data set names, IP addresses, security events. Only share data you are allowed to share, and remove or mask what you need to before sending it.
+
+Code contributions follow the same rule: a new parser should come with the sample data it was checked against, or at least a description of the checks made on real records.
 
 ## Development
 
