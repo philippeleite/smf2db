@@ -18,7 +18,7 @@ path, var, start, end = sys.argv[1], sys.argv[2], int(sys.argv[3]), int(sys.argv
 # split on \n only: pdftotext puts form feeds at page breaks, which str.splitlines would also split on
 lines = open(path, encoding='utf-8', errors='replace').read().split('\n')[start - 1:end - 1]
 row = re.compile(r'^(\d+) ([0-9A-F]+) (\S+(?: factor)?) (\d+) '
-                 r'(binary|Binary|signed|EBCDIC|char|character|packed|floating|float|l_float|s_float|CHAR|unsigned|bit string)\b(.*)$')
+                 r'(binary|signed|EBCDIC|char|character|packed|floating|float|l_float|s_float|unsigned|bit string)\b(.*)$', re.I)
 kinds = {'binary': 'u', 'unsigned': 'u', 'bit string': 'u', 'signed': 's', 'ebcdic': 'c', 'char': 'c',
          'character': 'c', 'packed': 'p', 'floating': 'f', 'float': 'f', 'l_float': 'f', 's_float': 'f'}
 out, expect, seen = [], 0, set()

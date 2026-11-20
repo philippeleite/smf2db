@@ -55,6 +55,7 @@ Elapsed time: 9.29 seconds
 | 74 | RMF device (1), XCF (2), OMVS kernel (3), cache subsystem (5) and HFS (6) activity | `smf074` and `smf074_{devctl,dev,xcfctl,xcfsys,xcfmbr,omvs,cachectl,cachedev,cachestat,raid,hfsglobal,hfsbuf}` |
 | 75 | RMF page data set activity | `smf075`, `smf075_page` |
 | 78 | RMF virtual storage (2) and I/O queuing (3) activity | `smf078` and `smf078_{common,cfgctl,cfg,ioq,ioqglob,iop,hpav}` |
+| 84 | JES monitoring facility: JES2 resource usage (subtype 21) | `smf084`, `smf084_mem`, `smf084_res` |
 
 Records of any other type are counted in the summary but not stored.
 
@@ -106,7 +107,7 @@ A binary built with `CGO_ENABLED=0` compiles but fails at run time with *"go-sql
    //SYSPRINT DD SYSOUT=*
    //SYSIN    DD *
      INDD(DUMPIN,OPTIONS(DUMP))
-     OUTDD(DUMPOUT,TYPE(4:6,14:18,21,30,41,42,60:62,64:66,70:75,78))
+     OUTDD(DUMPOUT,TYPE(4:6,14:18,21,30,41,42,60:62,64:66,70:75,78,84))
    /*
    ```
 
