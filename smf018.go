@@ -25,6 +25,7 @@ func smf018Init() {
 		SMF18RSD   DATETIME   NOT NULL,
 		SMF18UID   TEXT       NOT NULL,
 		SMF18IN1   INT        NOT NULL,
+		SMF18CON   INT        NOT NULL,
 		SMF18IN2   INT        NOT NULL,
 		SMF180DS   TEXT       NOT NULL,
 		SMF18NDS   TEXT       NOT NULL
@@ -50,6 +51,7 @@ func smf018Init() {
 	sqlStmt3 := `
 		INSERT INTO smf018
 		VALUES (
+			?,
 			?,
 			?,
 			?,
@@ -105,6 +107,7 @@ func smf018Parse(rec []byte) {
 		smfdate(rec[26:30]), // SMF18RSD
 		string(rec[30:38]),  // SMF18UID
 		int(rec[38]),        // SMF18IN1
+		int(rec[38] >> 7),   // SMF18CON: bit 0 of SMF18IN1, continuation record of a multi-volume rename
 		int(rec[39]),        // SMF18IN2
 		string(rec[40:84]),  // SMF180DS
 		string(rec[84:128]), // SMF18NDS
