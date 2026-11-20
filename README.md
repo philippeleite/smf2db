@@ -51,6 +51,7 @@ Elapsed time: 9.29 seconds
 | 70 | RMF processor activity: CPU, PR/SM partitions, ICSF (subtypes 1 and 2) | `smf070` and `smf070_{cpc,cpu,asid,lpar,lcpu,cpuid,icsf}` |
 | 71 | RMF paging activity | `smf071`, `smf071_paging` |
 | 72 | RMF workload activity (3), storage data (4) and serialization delay (5) | `smf072` and `smf072_*` (see AGENTS.md) |
+| 73 | RMF channel path activity | `smf073`, `smf073_ctl`, `smf073_chp`, `smf073_ext` |
 
 Records of any other type are counted in the summary but not stored.
 
@@ -102,7 +103,7 @@ A binary built with `CGO_ENABLED=0` compiles but fails at run time with *"go-sql
    //SYSPRINT DD SYSOUT=*
    //SYSIN    DD *
      INDD(DUMPIN,OPTIONS(DUMP))
-     OUTDD(DUMPOUT,TYPE(4:6,14:18,21,30,41,42,60:62,64:66,70:72))
+     OUTDD(DUMPOUT,TYPE(4:6,14:18,21,30,41,42,60:62,64:66,70:73))
    /*
    ```
 

@@ -91,6 +91,7 @@ smf2db [options] smfFile [dbFile]
 | 70 (RMF processor activity) | `smf070.go`, `rmf.go` | `smf070` (header + RMF product section) and per subtype: 1 `smf070_cpc`, `smf070_cpu`, `smf070_asid`, `smf070_lpar`, `smf070_lcpu`, `smf070_cpuid`; 2 `smf070_icsf` |
 | 71 (RMF paging activity) | `smf071.go`, `rmf.go` | `smf071` (header + RMF product section), `smf071_paging` |
 | 72 (RMF workload activity, storage, serialization delay) | `smf072.go`, `rmf.go` | `smf072` (header + RMF product section) and per subtype: 3 `smf072_wlm`, `smf072_served`, `smf072_rg`, `smf072_scp`, `smf072_rtd`, `smf072_wrm`, `smf072_dn`; 4 `smf072_stor`, `smf072_swap`; 5 `smf072_ser`, `smf072_cms`, `smf072_local`, `smf072_cmlo`, `smf072_cmlr`, `smf072_latch`, `smf072_enq`, `smf072_qscan` |
+| 73 (RMF channel path activity) | `smf073.go`, `rmf.go` | `smf073` (header + RMF product section), `smf073_ctl`, `smf073_chp`, `smf073_ext` |
 
 Type 6 has five writers (External Writer, JES2, JES3, PSF, IP PrintWay) that share the header up to `SMF6SBS`; their sections follow in `SMF6PAD1` bit order, each with its own 2-byte length. Only IP PrintWay sections are decoded, since it is the only writer in the sample data. The extended-mode fields (`SMF6BYTD`, `SMF6URI`, `SMF6ACCT`) are implemented from the manual but untested: every sample record is basic mode.
 
@@ -113,6 +114,8 @@ Type 72 notes:
 - Response time distribution: the first `smf072_rtd` section of a record (`SEQ` 1) is the bucket map (50…400% and X'FFFFFFFF'), not counts. A period's 14 counters (`R723RTD01`…`R723RTD14`, unnamed in the manual) are at `SEQ = R723CRTX + 1`; their sum matches `R723CRCP` (completed transactions) for 456 of 460 non-heterogeneous periods in the samples. Heterogeneous report class periods (`R723CRS1` bit 0) have invalid distributions, as the manual says.
 - IBM names with `#` (`R723MTV#`, `R723SCS#`, `R724PER#`) are double-quoted by `fields.columns()`; queries must quote them too.
 - 16-byte sums of squares (`R725*SQ`) use the `w` kind (REAL, approximate).
+
+Type 73: the 48-byte channel measurement data (`SMF73CCM`) has one layout per measurement group (`SMF73CMG` 1, 2, 3); `smf073_chp` has the columns of all three and fills only the channel's group. Fields documented as "float" are IBM hex floating point (4 or 8 bytes): a HiperSockets data unit size decodes to 4096 as HFP and 576 as IEEE. Every record has a section for each possible CHPID; `SMF73FG3` X'02' marks real entries.
 
 Type 42 notes:
 - The subtype triplets sit at fixed offsets after the product triplet. `SMF42NT` (number of triplets) is 0 in most real records, so it is ignored.
