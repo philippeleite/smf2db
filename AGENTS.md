@@ -85,10 +85,11 @@ smf2db [options] smfFile [dbFile]
 | 61 (catalog define) | `smf061.go` | `smf061` |
 | 62 (VSAM component or cluster opened) | `smf062.go` | `smf062`, `smf062_vol` |
 | 64 (VSAM component or cluster status) | `smf064.go` | `smf064`, `smf064_ext` |
+| 65 (catalog delete) | `smf065.go` | `smf065` |
 
 Type 6 has five writers (External Writer, JES2, JES3, PSF, IP PrintWay) that share the header up to `SMF6SBS`; their sections follow in `SMF6PAD1` bit order, each with its own 2-byte length. Only IP PrintWay sections are decoded, since it is the only writer in the sample data. The extended-mode fields (`SMF6BYTD`, `SMF6URI`, `SMF6ACCT`) are implemented from the manual but untested: every sample record is basic mode.
 
-Type 60 stores the raw VVR/NVR in `SMF60CRC` (BLOB, length in its first two bytes) and, in `SMF60RQT`, the 8-byte VVDS request time in microseconds that version 2 records append after it. The manual gives that field no name; `SMF60RQT` is ours. Type 61 has the same layout with the raw catalog record in `SMF61CRC`, optionally followed by a 16-byte STCKE timestamp (`SMF61ETS`, converted with `stcketime`); the sample records (version 1) do not have it, so it is NULL there and only unit-tested.
+Type 60 stores the raw VVR/NVR in `SMF60CRC` (BLOB, length in its first two bytes) and, in `SMF60RQT`, the 8-byte VVDS request time in microseconds that version 2 records append after it. The manual gives that field no name; `SMF60RQT` is ours. Type 61 has the same layout with the raw catalog record in `SMF61CRC`, optionally followed by a 16-byte STCKE timestamp (`SMF61ETS`, converted with `stcketime`); the sample records (version 1) do not have it, so it is NULL there and only unit-tested. Type 65 (`smf065.go`) is the same layout plus `SMF65FNC` (`S` = data set scratched, `U` = only catalog entries changed).
 
 Type 62: after the 10-byte volume entries come the 24-byte SMS classes (always present in the samples, zeros when `SMF62IND` bit 4 is off; stored only when it is on) and the statistics section. The 66-byte encryption block between them is assumed to exist only when bit 5 (encrypted) is on, which no sample record has (see the `shortcut:` comment). Sample statistics sections are 12 bytes, so `SMF62DET`, `SMF62DKL`, `SMF62JobID` and `SMF62SysplexName` are NULL there.
 

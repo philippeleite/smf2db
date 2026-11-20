@@ -46,6 +46,7 @@ Elapsed time: 9.29 seconds
 | 61 | Integrated catalog facility define activity | `smf061` |
 | 62 | VSAM component or cluster opened | `smf062`, `smf062_vol` |
 | 64 | VSAM component or cluster status (CLOSE, EOV, out of space) | `smf064`, `smf064_ext` |
+| 65 | Integrated catalog facility delete activity | `smf065` |
 
 Records of any other type are counted in the summary but not stored.
 
@@ -97,7 +98,7 @@ A binary built with `CGO_ENABLED=0` compiles but fails at run time with *"go-sql
    //SYSPRINT DD SYSOUT=*
    //SYSIN    DD *
      INDD(DUMPIN,OPTIONS(DUMP))
-     OUTDD(DUMPOUT,TYPE(4:6,14:18,21,30,41,42,60:62,64))
+     OUTDD(DUMPOUT,TYPE(4:6,14:18,21,30,41,42,60:62,64,65))
    /*
    ```
 
@@ -138,8 +139,8 @@ smf2db smf.dump
 # Only job/step accounting and DFSMS statistics, into a named database
 smf2db -t 30,42 smf.dump accounting.db
 
-# Data set activity (open/close, delete, rename, VSAM open/close), VVDS updates and catalog defines
-smf2db -t 14:18,60:62,64 smf.dump datasets.db
+# Data set activity (open/close, delete, rename, VSAM open/close), VVDS updates and catalog defines and deletes
+smf2db -t 14:18,60:62,64,65 smf.dump datasets.db
 ```
 
 ## Database layout
