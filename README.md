@@ -67,7 +67,7 @@ Type 42 subtypes and their tables:
 smf2db is written in Go and uses [mattn/go-sqlite3](https://github.com/mattn/go-sqlite3), which needs **CGO and a C compiler**.
 
 ```sh
-git clone <repository-url>
+git clone https://github.com/philippeleite/smf2db.git
 cd smf2db
 CGO_ENABLED=1 go build -o smf2db .
 ```
@@ -348,3 +348,7 @@ CGO_ENABLED=1 go test ./...      # also runs the end-to-end test when data/smfte
 The end-to-end test converts a local SMF file and compares the record counts against the IFASMFDP report of the dump job. Sample data is not included in the repository.
 
 [AGENTS.md](AGENTS.md) describes the code structure, the parser conventions and how to add a new record type.
+
+## License
+
+smf2db is released under the [MIT License](LICENSE).
