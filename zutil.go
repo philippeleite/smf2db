@@ -2,9 +2,47 @@ package main
 
 import (
 	"bytes"
+	"database/sql"
 	"encoding/binary"
 	"fmt"
+	"log"
+	"strings"
+	"time"
 )
+
+// createTable (re)creates a table and returns its INSERT statement with one placeholder per column,
+// so the two cannot drift apart. columns is a comma-separated list of "NAME TYPE" definitions.
+func createTable(name, columns string) *sql.Stmt {
+	ddl := fmt.Sprintf("DROP TABLE IF EXISTS %s; CREATE TABLE %s (%s);", name, name, columns)
+	if _, err := db.Exec(ddl); err != nil {
+		log.Printf("%q: %s\n", err, ddl)
+	}
+	n := strings.Count(columns, ",") + 1
+	ins := fmt.Sprintf("INSERT INTO %s VALUES (%s);", name, strings.TrimSuffix(strings.Repeat("?, ", n), ", "))
+	stmt, err := db.Prepare(ins)
+	if err != nil {
+		log.Printf("%q: %s\n", err, ins)
+	}
+	return stmt
+}
+
+// insert executes an INSERT statement made by createTable, logging failures like the other parsers do.
+func insert(stmt *sql.Stmt, args ...interface{}) {
+	if _, err := stmt.Exec(args...); err != nil {
+		log.Println(err)
+	}
+}
+
+// todtime converts an 8-byte TOD clock value (bit 51 = 1 microsecond since 1900-01-01 UTC) to text.
+// Leap seconds are not applied.
+func todtime(b []byte) string {
+	tod := binary.BigEndian.Uint64(b)
+	if tod == 0 {
+		return "0000-00-00 00:00:00.000"
+	}
+	t := time.Date(1900, 1, 1, 0, 0, 0, 0, time.UTC).Add(time.Duration(tod>>12) * time.Microsecond)
+	return t.Format("2006-01-02 15:04:05.000")
+}
 
 func smfdate(sdate []byte) string {
 	if bytes.Equal(sdate, []byte{0x00, 0x00, 0x00, 0x00}) {
