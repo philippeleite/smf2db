@@ -18,15 +18,15 @@ path, var, start, end = sys.argv[1], sys.argv[2], int(sys.argv[3]), int(sys.argv
 # split on \n only: pdftotext puts form feeds at page breaks, which str.splitlines would also split on
 lines = open(path, encoding='utf-8', errors='replace').read().split('\n')[start - 1:end - 1]
 row = re.compile(r'^(\d+) ([0-9A-F]+) (\S+(?: factor)?) (\d+) '
-                 r'(binary|Binary|signed|EBCDIC|char|character|packed|floating|float|unsigned|bit string)\b(.*)$')
+                 r'(binary|Binary|signed|EBCDIC|char|character|packed|floating|float|l_float|s_float|CHAR|unsigned|bit string)\b(.*)$')
 kinds = {'binary': 'u', 'unsigned': 'u', 'bit string': 'u', 'signed': 's', 'ebcdic': 'c', 'char': 'c',
-         'character': 'c', 'packed': 'p', 'floating': 'f', 'float': 'f'}
+         'character': 'c', 'packed': 'p', 'floating': 'f', 'float': 'f', 'l_float': 'f', 's_float': 'f'}
 out, expect, seen = [], 0, set()
 for line in lines:
     m = row.match(line.strip())
     if not m:
         continue
-    dec, hx, name, n, fmt, desc = int(m[1]), int(m[2], 16), m[3].replace(' ', ''), int(m[4]), m[5].lower(), m[6].strip()
+    dec, hx, name, n, fmt, desc = int(m[1]), int(m[2], 16), re.sub(r'\(\d+\)', '', m[3]).replace(' ', ''), int(m[4]), m[5].lower(), m[6].strip()
     off = dec if dec == hx else (hx if hx == expect else dec)
     note = '' if dec == hx else f' // manual: {dec} / {m[2]}'
     if name == '*' or desc.startswith('Reserved') or name in seen:

@@ -1,5 +1,43 @@
 package main
 
+import "database/sql"
+
+// rmfSection maps a triplet of a record subtype (at its offset in the header) to a child table. Several
+// triplets share a table when the manual maps them with one structure; a field in the section tells them
+// apart. Rows get ID and SEQ, the 1-based position of the section within its triplet, which is what the
+// manual's index fields refer to.
+type rmfSection struct {
+	subtype, at int
+	table       string
+	f           fields
+	stmt        *sql.Stmt
+}
+
+// rmfCreateSections creates each distinct table of sections once and links its INSERT statement.
+func rmfCreateSections(sections []*rmfSection) {
+	stmts := map[string]*sql.Stmt{}
+	for _, sec := range sections {
+		if stmts[sec.table] == nil {
+			stmts[sec.table] = createTable(sec.table, "ID INT NOT NULL, SEQ INT NOT NULL, "+sec.f.columns())
+		}
+		sec.stmt = stmts[sec.table]
+	}
+}
+
+// rmfInsertSections inserts every section of the record's subtype.
+func rmfInsertSections(sections []*rmfSection, rec []byte, id int) {
+	subtype := section(rec).num(18, 2)
+	for _, sec := range sections {
+		if sec.subtype != subtype {
+			continue
+		}
+		off, length, n := tripletAt(rec, sec.at)
+		for k := 0; k < n; k++ {
+			insert(sec.stmt, append([]interface{}{id, k + 1}, sec.f.values(section(rec).sub(off+k*length, length))...)...)
+		}
+	}
+}
+
 // rmfColumns returns the columns of an RMF record's main table: the SMF header and the RMF product
 // section. p is the field name prefix, such as "SMF70".
 func rmfColumns(p string) string {

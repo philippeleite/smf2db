@@ -18,16 +18,7 @@ var pStmt072 *sql.Stmt
 var once072 sync.Once
 var count072 int
 
-// smf072Section maps a triplet (at its offset in the header) to a child table. Several triplets share a
-// table when the manual maps them with one structure; a field in the section tells them apart.
-type smf072Section struct {
-	subtype, at int
-	table       string
-	f           fields
-	stmt        *sql.Stmt
-}
-
-var smf072Sections = []*smf072Section{
+var smf072Sections = []*rmfSection{
 	{subtype: 3, at: 32, table: "smf072_wlm", f: smf072WlmFields},       // workload manager control
 	{subtype: 3, at: 40, table: "smf072_served", f: smf072ServedFields}, // service class served
 	{subtype: 3, at: 48, table: "smf072_rg", f: smf072RgFields},         // resource group
@@ -55,13 +46,7 @@ var smf072Sections = []*smf072Section{
 
 func smf072Init() {
 	pStmt072 = createTable("smf072", rmfColumns("SMF72"))
-	stmts := map[string]*sql.Stmt{}
-	for _, sec := range smf072Sections {
-		if stmts[sec.table] == nil {
-			stmts[sec.table] = createTable(sec.table, "ID INT NOT NULL, SEQ INT NOT NULL, "+sec.f.columns())
-		}
-		sec.stmt = stmts[sec.table]
-	}
+	rmfCreateSections(smf072Sections)
 }
 
 func smf072Parse(rec []byte) {
@@ -69,17 +54,7 @@ func smf072Parse(rec []byte) {
 
 	count072 += 1
 	insert(pStmt072, rmfRow(rec, count072, "SMF72")...)
-	subtype := section(rec).num(18, 2)
-	for _, sec := range smf072Sections {
-		if sec.subtype != subtype {
-			continue
-		}
-		off, length, n := tripletAt(rec, sec.at)
-		for k := 0; k < n; k++ {
-			insert(sec.stmt, append([]interface{}{count072, k + 1},
-				sec.f.values(section(rec).sub(off+k*length, length))...)...)
-		}
-	}
+	rmfInsertSections(smf072Sections, rec, count072)
 }
 
 // smf072RtdFields: counts of completed transactions by response time, as a percentage of the period's

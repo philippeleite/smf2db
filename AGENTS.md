@@ -92,6 +92,7 @@ smf2db [options] smfFile [dbFile]
 | 71 (RMF paging activity) | `smf071.go`, `rmf.go` | `smf071` (header + RMF product section), `smf071_paging` |
 | 72 (RMF workload activity, storage, serialization delay) | `smf072.go`, `rmf.go` | `smf072` (header + RMF product section) and per subtype: 3 `smf072_wlm`, `smf072_served`, `smf072_rg`, `smf072_scp`, `smf072_rtd`, `smf072_wrm`, `smf072_dn`; 4 `smf072_stor`, `smf072_swap`; 5 `smf072_ser`, `smf072_cms`, `smf072_local`, `smf072_cmlo`, `smf072_cmlr`, `smf072_latch`, `smf072_enq`, `smf072_qscan` |
 | 73 (RMF channel path activity) | `smf073.go`, `rmf.go` | `smf073` (header + RMF product section), `smf073_ctl`, `smf073_chp`, `smf073_ext` |
+| 74 (RMF activity of several resources) | `smf074.go`, `rmf.go` | `smf074` (header + RMF product section) and per subtype: 1 `smf074_devctl`, `smf074_dev`; 2 `smf074_xcfctl`, `smf074_xcfsys`, `smf074_xcfmbr`; 3 `smf074_omvs`; 5 `smf074_cachectl`, `smf074_cachedev`, `smf074_cachestat`, `smf074_raid`; 6 `smf074_hfsglobal`, `smf074_hfsbuf` |
 
 Type 6 has five writers (External Writer, JES2, JES3, PSF, IP PrintWay) that share the header up to `SMF6SBS`; their sections follow in `SMF6PAD1` bit order, each with its own 2-byte length. Only IP PrintWay sections are decoded, since it is the only writer in the sample data. The extended-mode fields (`SMF6BYTD`, `SMF6URI`, `SMF6ACCT`) are implemented from the manual but untested: every sample record is basic mode.
 
@@ -103,7 +104,7 @@ Type 64: 26-byte extent entries follow `SMF64ESL`, then the statistics section w
 
 Type 70 notes:
 - Sections with many fields are declared as `fields` tables (`fields.go`) generated from the manual with `tools/genfields.py`, then reviewed by hand (`SMF70HOF` signed, `SMF70GJT`/`SMF70_IPL_TIME` TOD, `SMF70SER` hex digits). Three offsets in the manual are inconsistent (`SMF70I01`, `SMF70P07`, `SMF70P11`); the generator picks the one that continues the sequence and the table keeps a comment.
-- `rmf.go` has the RMF product section, common to types 70–79 (`rmfProductFields(prefix)`), and `rmfColumns`/`rmfRow` for the main table of any RMF type (SMF header + product section); new RMF types should use them, as `smf071.go` does. The reassembly area of broken large records is not decoded; `SMFnnRAN` shows whether a record is one.
+- `rmf.go` has the RMF product section, common to types 70–79 (`rmfProductFields(prefix)`), `rmfColumns`/`rmfRow` for the main table of any RMF type (SMF header + product section), and `rmfSection` to map triplets to child tables; new RMF types should use them, as `smf071.go`, `smf072.go` and `smf074.go` do. The reassembly area of broken large records is not decoded; `SMFnnRAN` shows whether a record is one.
 - Logical processors are linked to their partition by `SMF70LPN` (each partition is followed by its `SMF70BDN` processors), and to the CPU type name by `SMF70CIX`, which is also stored, 1-based, in `smf070_cpuid`.
 - Durations are stored as recorded: `SMF70WAT`/`SMF70PAT` in TOD units (bit 51 = 1 µs, divide by 4096 for µs), `SMF70PDT`/`SMF70EDT`/`SMF70ONT` in microseconds. ICSF counters (`R702*`) are IBM hex floating point, stored as REAL.
 - Type 71 has one paging data section per record (`smf071_paging`); only `data/smfdata` contains type 71 records. Its HFP averages (`SMF71LVS`) match the integer ones (`SMF71AVS`), which confirms the HFP conversion on real data. The swap placement section is not decoded (no valid values since z/OS V1R13).
@@ -116,6 +117,8 @@ Type 72 notes:
 - 16-byte sums of squares (`R725*SQ`) use the `w` kind (REAL, approximate).
 
 Type 73: the 48-byte channel measurement data (`SMF73CCM`) has one layout per measurement group (`SMF73CMG` 1, 2, 3); `smf073_chp` has the columns of all three and fills only the channel's group. Fields documented as "float" are IBM hex floating point (4 or 8 bytes): a HiperSockets data unit size decodes to 4096 as HFP and 576 as IEEE. Every record has a section for each possible CHPID; `SMF73FG3` X'02' marks real entries.
+
+Type 74: sections are mapped with `rmfSection` (`rmf.go`: `rmfCreateSections`/`rmfInsertSections`, also used by type 72). The RAID rank/extent pool section has two layouts at the same offsets, chosen by `R7451FLG` (1 rank, 2 extent pool); `smf074_raid` has both column sets and fills one, like type 73's measurement groups (all sample rows are extent pool data). Not decoded (no sample data): subtypes 4 and 7–10, XCF path sections, cache device extension sections, HFS file system sections. `tools/genfields.py` also accepts the `l_float`/`s_float`/`CHAR` formats and strips footnote markers such as `(2)` from names.
 
 Type 42 notes:
 - The subtype triplets sit at fixed offsets after the product triplet. `SMF42NT` (number of triplets) is 0 in most real records, so it is ignored.
