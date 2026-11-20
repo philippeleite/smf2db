@@ -43,6 +43,7 @@ Elapsed time: 9.29 seconds
 | 41 | Data-in-virtual objects and VLF statistics | `smf041` and `smf041_{prod,obja,obju,obji,vlfs}` |
 | 42 | DFSMS statistics and configuration (subtypes 1–6, 9, 21, 24, 27) | `smf042` and `smf042_*` (see below) |
 | 60 | VSAM volume data set (VVDS) updated | `smf060` |
+| 61 | Integrated catalog facility define activity | `smf061` |
 
 Records of any other type are counted in the summary but not stored.
 
@@ -94,7 +95,7 @@ A binary built with `CGO_ENABLED=0` compiles but fails at run time with *"go-sql
    //SYSPRINT DD SYSOUT=*
    //SYSIN    DD *
      INDD(DUMPIN,OPTIONS(DUMP))
-     OUTDD(DUMPOUT,TYPE(4:6,14:18,21,30,41,42,60))
+     OUTDD(DUMPOUT,TYPE(4:6,14:18,21,30,41,42,60,61))
    /*
    ```
 
@@ -135,8 +136,8 @@ smf2db smf.dump
 # Only job/step accounting and DFSMS statistics, into a named database
 smf2db -t 30,42 smf.dump accounting.db
 
-# Data set activity (open/close, delete, rename) and VVDS updates
-smf2db -t 14:18,60 smf.dump datasets.db
+# Data set activity (open/close, delete, rename), VVDS updates and catalog defines
+smf2db -t 14:18,60,61 smf.dump datasets.db
 ```
 
 ## Database layout

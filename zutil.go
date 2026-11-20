@@ -33,6 +33,12 @@ func insert(stmt *sql.Stmt, args ...interface{}) {
 	}
 }
 
+// stcketime converts a 16-byte STCKE value: an epoch index byte followed by the TOD clock bits.
+// Epoch index 0 (until 2042) is assumed.
+func stcketime(b []byte) string {
+	return todtime(b[1:9])
+}
+
 // todtime converts an 8-byte TOD clock value (bit 51 = 1 microsecond since 1900-01-01 UTC) to text.
 // Leap seconds are not applied.
 func todtime(b []byte) string {

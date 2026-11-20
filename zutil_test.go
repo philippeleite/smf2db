@@ -14,6 +14,13 @@ func TestTodTime(t *testing.T) {
 	}
 }
 
+func TestStckeTime(t *testing.T) {
+	stcke := []byte{0x00, 0xd2, 0x72, 0x28, 0xa6, 0x3b, 0x4c, 0x00, 0x00, 0, 0, 0, 0, 0, 0, 0}
+	if got := stcketime(stcke); got != "2017-04-26 14:00:01.400" {
+		t.Errorf("stcketime: got %q", got)
+	}
+}
+
 func TestSmfTime(t *testing.T) {
 	var ttime = []byte{0x00, 0x5d, 0x77, 0x40}
 	stime := smftime(ttime)
