@@ -127,3 +127,9 @@ func b3toInt(s []byte) int {
 	copy(t[1:], s)
 	return int(binary.BigEndian.Uint32(t))
 }
+
+// ebcdic converts an EBCDIC field to ASCII in place and returns it as a string.
+func ebcdic(b []byte) string {
+	bcd2asc(b)
+	return string(b)
+}

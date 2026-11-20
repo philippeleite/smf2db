@@ -28,7 +28,8 @@ go vet ./...
 Tests:
 - `zutil_test.go`: date/time/EBCDIC helpers.
 - `main_test.go`: `smfParse` skips a record whose parser panics.
-- `smftest_test.go` (`TestSmfTestFile`): runs `main()` on `data/smftest.rdw` (363 MB, 815,993 records, 2017) and checks the per-type counts printed by smf2db, and the row count of every parsed type's main table (`smfNNN`), against the RECORDS WRITTEN column of the IFASMFDP report in `data/smftest.txt`. It skips when those files are missing or SQLite has no CGO. It only checks counts, not field values, and only for types registered in `parseTable`.
+- `smf006_test.go`: `SMF6ACCT` decoding, using the example from the manual.
+- `smftest_test.go` (`TestSmfTestFile`): runs `main()` on `data/smftest.rdw` (363 MB, 815,993 records, 2017) and checks the per-type counts printed by smf2db, and the row count of every parsed type's main table (`smfNNN`), against the RECORDS WRITTEN column of the IFASMFDP report in `data/smftest.txt`. It also fails if smf2db writes anything to the log (skipped record, failed `Prepare`/`Exec`), which catches child tables left empty by a broken statement. It skips when those files are missing or SQLite has no CGO. It only checks counts, not field values, and only for types registered in `parseTable`.
 - `data/smfdata` (26 MB, 2019) is another local sample, with no reference report.
 
 Usage:
@@ -70,12 +71,15 @@ smf2db [options] smfFile [dbFile]
 |---|---|---|
 | 4 (step termination) | `smf004.go` | `smf004`, `smf004_dev` |
 | 5 (job termination) | `smf005.go` | `smf005` |
+| 6 (output writer) | `smf006.go` | `smf006` (common header, every writer), `smf006_ipw` (IP PrintWay sections only, `SMF6SBS` = 9) |
 | 14 (dataset INPUT/RDBACK) | `smf014.go` | `smf014`, `smf014_ucb` |
 | 15 (dataset OUTPUT/UPDAT/…) | `smf015.go` | `smf015`, `smf015_ucb` |
 | 17 (scratch) | `smf017.go` | `smf017`, `smf017_vol` |
 | 18 (rename) | `smf018.go` | `smf018`, `smf018_vol` |
 | 30 (common address space work) | `smf030.go` | `smf030` + `smf030_{ioac,comp,proc,excp,acct,stor,perf,oper,appc,appc_cum,unix,arm,usag,mers,cntr,zedc}` |
 | 41 (DIV / VLF) | `smf041.go` | `smf041`, `smf041_{prod,obja,obju,obji,vlfs}` |
+
+Type 6 has five writers (External Writer, JES2, JES3, PSF, IP PrintWay) that share the header up to `SMF6SBS`; their sections follow in `SMF6PAD1` bit order, each with its own 2-byte length. Only IP PrintWay sections are decoded, since it is the only writer in the sample data. The extended-mode fields (`SMF6BYTD`, `SMF6URI`, `SMF6ACCT`) are implemented from the manual but untested: every sample record is basic mode.
 
 `smf015.go` is a copy of `smf014.go` with renamed identifiers (same layout). **A fix in one almost always applies to the other.**
 
@@ -107,7 +111,7 @@ Conventions:
 - **Column names = IBM field names** (`SMF30JBN`, `JFCBDSNM`, …). Each `Exec` argument carries a comment with the field name. Keep it that way: it is the only documentation of the mapping.
 - **Binary integers**: `binary.BigEndian.Uint16/32/64`, 3-byte fields with `b3toInt`, 1-byte fields with `int(rec[n])`.
 - **Dates/times** become text `YYYY-MM-DD HH:MM:SS.mmm`: `smfdate` (packed `0cyydddF`) returns the date only, `smftime` (hundredths of a second since midnight) returns the time only with date `0000-00-00`. A zero date/time becomes `0000-00-00 00:00:00.000`. `filedate` handles the 3-byte JFCB date.
-- **Text**: `bcd2asc` converts **EBCDIC → ASCII** (the name is misleading: it is not BCD) by modifying the buffer. Strings keep their space padding; nothing is trimmed.
+- **Text**: `ebcdic(b)` converts a field and returns it as a string (newer parsers use it). `bcd2asc` converts **EBCDIC → ASCII** (the name is misleading: it is not BCD) by modifying the buffer. Strings keep their space padding; nothing is trimmed.
 - **Optional fields** (sections that may be absent or depend on flags): an `interface{}` variable holding `nil`, stored as NULL; the column has no `NOT NULL`. See `smf014.go` (DASD vs. tape, extended sections) and `smf030.go` (`SMF30CDO`/`SMF30USO` only when the header is long enough).
 - **Errors**: SQL failures are only logged (`log.Println`/`log.Printf`) and processing continues; only open/file errors stop the program (`handleErr` → `log.Fatalln`). Parsers share a global `err` variable.
 - **Language**: documentation and code comments are written in English.

@@ -2,9 +2,11 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"database/sql"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -135,6 +137,11 @@ func runMain(t *testing.T, smfFile, dbFile string) (map[int]uint64, uint64) {
 		out <- string(b)
 	}()
 
+	// Parsers only log failed statements and skipped records, so any log output is a failure.
+	var logBuf bytes.Buffer
+	log.SetOutput(&logBuf)
+	defer log.SetOutput(os.Stderr)
+
 	stdout, args := os.Stdout, os.Args
 	os.Stdout, os.Args = w, []string{"smf2db", smfFile, dbFile}
 	defer func() { os.Stdout, os.Args = stdout, args }()
@@ -142,6 +149,10 @@ func runMain(t *testing.T, smfFile, dbFile string) (map[int]uint64, uint64) {
 	w.Close()
 	os.Stdout = stdout
 	text := <-out
+
+	if logBuf.Len() > 0 {
+		t.Errorf("smf2db logged errors:\n%s", logBuf.String())
+	}
 
 	counts := map[int]uint64{}
 	var total uint64
