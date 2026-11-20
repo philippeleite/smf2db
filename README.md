@@ -58,6 +58,7 @@ Elapsed time: 9.29 seconds
 | 80 | RACF processing (logons, resource access, profile changes) | `smf080`, `smf080_reloc`, `smf080_reloc2`, plus reference tables `smf080_events`, `smf080_qualifiers`, `smf080_types` |
 | 82 | ICSF: cryptographic processor processing times (subtype 20) | `smf082`, `smf082_t20` |
 | 84 | JES monitoring facility: JES2 resource usage (subtype 21) | `smf084`, `smf084_mem`, `smf084_res` |
+| 88 | System Logger: log stream activity (subtype 1) | `smf088` |
 | 92 | z/OS UNIX file system activity: file open, close, delete/rename, access count | `smf092`, `smf092_open`, `smf092_close`, `smf092_delete`, `smf092_count` |
 
 Records of any other type are counted in the summary but not stored.
@@ -110,7 +111,7 @@ A binary built with `CGO_ENABLED=0` compiles but fails at run time with *"go-sql
    //SYSPRINT DD SYSOUT=*
    //SYSIN    DD *
      INDD(DUMPIN,OPTIONS(DUMP))
-     OUTDD(DUMPOUT,TYPE(4:6,14:18,21,30,41,42,60:62,64:66,70:75,78,80,82,84,92))
+     OUTDD(DUMPOUT,TYPE(4:6,14:18,21,30,41,42,60:62,64:66,70:75,78,80,82,84,88,92))
    /*
    ```
 
