@@ -40,6 +40,7 @@ Elapsed time: 9.29 seconds
 | 18 | Rename non-VSAM data set | `smf018`, `smf018_vol` |
 | 20 | Job initiation (accounting fields and RACF user, group and terminal) | `smf020` |
 | 21 | Tape error statistics by volume | `smf021` |
+| 23 | SMF status: buffer usage and storage, I/O and dispatch counters per interval | `smf023` |
 | 30 | Common address space work (job/step accounting) | `smf030` and `smf030_{ioac,comp,proc,excp,acct,stor,perf,oper,appc,appc_cum,unix,arm,usag,mers,cntr,zedc}` |
 | 32 | TSO/E user work accounting: command counts per session (subtypes 1 and 2) | `smf032`, `smf032_cmd` |
 | 33 | APPC/MVS TP accounting: conversations (subtype 2) | `smf033`, `smf033_conv` |
@@ -121,7 +122,7 @@ A binary built with `CGO_ENABLED=0` compiles but fails at run time with *"go-sql
    //SYSPRINT DD SYSOUT=*
    //SYSIN    DD *
      INDD(DUMPIN,OPTIONS(DUMP))
-     OUTDD(DUMPOUT,TYPE(4:6,14:18,20,21,30,32:35,41,42,50,60:62,64:66,70:75,78,80,82,84,88:90,92,118,119))
+     OUTDD(DUMPOUT,TYPE(4:6,14:18,20,21,23,30,32:35,41,42,50,60:62,64:66,70:75,78,80,82,84,88:90,92,118,119))
    /*
    ```
 
@@ -420,7 +421,7 @@ Some records differ from the manual. smf2db follows the data, and [AGENTS.md](AG
 
 smf2db only decodes the record types, subtypes and sections it could check against real SMF records: every offset and data format was compared with sample dumps, not taken from the manuals alone. The manuals have wrong offsets and fields whose real format differs from the documented one (see [AGENTS.md](AGENTS.md)), so a layout that was never seen in real data is not implemented. **Some records are therefore not implemented yet because there was not enough test data for them:**
 
-- **Record types not decoded** (only counted in the summary): every type not in the table above. Some of them, such as 2, 3, 23, 40, 100, 102, 110, 115, 133 and the vendor types 199 to 255, have sample data and are on the to-do list; the others have none.
+- **Record types not decoded** (only counted in the summary): every type not in the table above. Some of them, such as 2, 3, 40, 100, 102, 110, 115, 133 and the vendor types 199 to 255, have sample data and are on the to-do list; the others have none.
 - **Subtypes and sections not decoded** within supported types:
   - type 6: only the IP PrintWay sections; JES2, JES3, PSF and External Writer records get only the common header row;
   - type 32: subtypes 3 and 4 (DETAIL accounting, with CPU and I/O per command);
@@ -435,6 +436,7 @@ smf2db only decodes the record types, subtypes and sections it could check again
   - type 88: subtype 11 (structure alter);
   - type 89: the tenant resource group and tenant intersection sections;
   - type 90: every subtype except 6, 24 and 30; the subtype 24 WLM service policy is kept as a BLOB (it is mapped by IWMSVPOL, documented in z/OS MVS Data Areas);
+  - type 23: the logstream statistics section (the spin lock and bind break sections are for IBM internal use);
   - type 119: every subtype except 1, 2, 3, 5, 6, 7, 10, 70 and 72; the AT-TLS and IP filter sections of subtype 2, the SOCKS and load module sections of FTP records, IPv6 IP/ICMP statistics and IPv6 HOME address sections;
   - type 118: subtypes 4 (TN3270 client) and 70 to 75 (FTP server), and the FTP client's variable z/OS UNIX file names;
   - type 92: subtypes 1 to 9, 12, 13, 15 and the zFS subtypes 50 to 59.

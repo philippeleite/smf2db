@@ -80,6 +80,7 @@ smf2db [options] smfFile [dbFile]
 | 18 (rename) | `smf018.go` | `smf018`, `smf018_vol` |
 | 20 (job initiation) | `smf020.go` | `smf020` (header, accounting fields and RACF relocate section in one row; only `data/smfdata` has type 20) |
 | 21 (tape error statistics by volume) | `smf021.go` | `smf021` |
+| 23 (SMF status) | `smf023.go` | `smf023` (header, product, system and SMF statistics sections in one row; only `data/smfdata` has type 23) |
 | 30 (common address space work) | `smf030.go` | `smf030` + `smf030_{ioac,comp,proc,excp,acct,stor,perf,oper,appc,appc_cum,unix,arm,usag,mers,cntr,zedc}` |
 | 32 (TSO/E user work accounting) | `smf032.go` | `smf032` (header, product, identification), `smf032_cmd` (command sections, subtypes 1 and 2) |
 | 33 (APPC/MVS TP accounting) | `smf033.go` | `smf033` (header, product, address space ID), `smf033_conv` (subtype 2 conversations, with TP names and LUWID) |
@@ -158,6 +159,8 @@ Type 32: the header triplets start at manual offset 24 (`rec[20]`), not 28 as in
 Type 33: the conversation ID section locates the partner/local TP name and LUWID sections by offsets from the start of the record (RDW included, so `rec` index = offset − 4); each is a 2-byte length followed by the data. `SMF33RSD` is documented as binary but is a packed date. The two sample records are the two sides of one conversation, so `SMF33CDS`/`SMF33CDR` (HFP byte counts) mirror each other. Not decoded (no sample data): subtype 1, user data field section.
 
 Type 20: laid out like type 5; `SMF20RLO` is an offset from the flag byte (`rec[0]`), as in type 4. The only sample record (in `data/smfdata`) has no accounting fields; its reader time, RACF user and group match the type 30 records of the same job.
+
+Type 23: the header triplets start at `rec[16]` (manual offset 20). The interval counters (`SMF23NGD`…`SMF23SRD`) equal the differences of consecutive cumulative ones (`SMF23NGR`…`SMF23SRB`) in the samples; `SMF23TOD` is UTC. Not decoded: the logstream statistics section (no sample data) and the spin lock and bind break sections (IBM internal use).
 
 Type 34: laid out like type 4 (`TIV*` names, no triplets). `TIVRLCT` is an offset from the flag byte (`rec[0]`), as in type 4; the accounting section follows the EXCP entries (`TIVVAR` = 2 + 8 × entries, none in the samples). Every sample record matches a type 32 session-end record (user and logon time).
 
