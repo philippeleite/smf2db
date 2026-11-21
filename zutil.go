@@ -55,10 +55,9 @@ func smfdate(sdate []byte) string {
 		return "0000-00-00 00:00:00.000"
 	}
 	var monthDays = []int{31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31}
-	dayOfYear := int((sdate[3] >> 4) +
-		((sdate[2] & 0x0f) * 10) +
-		((sdate[2] >> 4) * 100))
-	century := int(sdate[0]*100) + 1900
+	// int before multiplying: as bytes, days 300 and above overflowed
+	dayOfYear := int(sdate[3]>>4) + int(sdate[2]&0x0f)*10 + int(sdate[2]>>4)*100
+	century := int(sdate[0])*100 + 1900
 	year := century + int((sdate[1]>>4)*10+(sdate[1]&0x0f))
 	leap := (year&3) == 0 && ((year%25) != 0 || (year&15) == 0)
 	dayOfMonth := dayOfYear
@@ -81,9 +80,7 @@ func filedate(sdate []byte) string {
 		return "0000-00-00 00:00:00.000"
 	}
 	var monthDays = []int{31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31}
-	dayOfYear := int((sdate[2] & 0x0f) +
-		((sdate[2] >> 4) * 10) +
-		((sdate[1] & 0x0f) * 100))
+	dayOfYear := int(sdate[2]&0x0f) + int(sdate[2]>>4)*10 + int(sdate[1]&0x0f)*100
 	year := int(sdate[0]) + 1900
 	leap := (year&3) == 0 && ((year%25) != 0 || (year&15) == 0)
 	dayOfMonth := dayOfYear

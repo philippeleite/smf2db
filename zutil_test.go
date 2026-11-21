@@ -35,6 +35,9 @@ func TestSmfDate(t *testing.T) {
 	if sdate != "2016-02-29 00:00:00.000" {
 		t.Errorf("Date error")
 	}
+	if sdate = smfdate([]byte{0x01, 0x26, 0x31, 0x8f}); sdate != "2026-11-14 00:00:00.000" {
+		t.Errorf("day 318: got %s", sdate)
+	}
 }
 
 func TestFileDate(t *testing.T) {

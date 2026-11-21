@@ -71,6 +71,7 @@ Elapsed time: 9.29 seconds
 | 89 | Usage data for sub-capacity pricing: product usage (1) and product state (2) | `smf089`, `smf089_usage`, `smf089_isect`, `smf089_state` |
 | 90 | System status: SWITCH SMF (6), VARY WLM policy (24), RESET (30) | `smf090`, `smf090_switch`, `smf090_wlm`, `smf090_reset` |
 | 92 | z/OS UNIX file system activity: file open, close, delete/rename, access count | `smf092`, `smf092_open`, `smf092_close`, `smf092_delete`, `smf092_count` |
+| 99 | System Resource Manager decisions: system state, SRM action trace, priority tables, resource groups and software licensing (1), service class periods with their address spaces and servers (2), period plots (3), device cluster I/O priorities (4), period summary (6), LPAR CPU management (8) | `smf099` and `smf099_{trace,state,prty,prty_zaap,prty_ziip,rg,gr,sl,class,period,server,as_esp,sdata,s3_period,io_prty,s6_period,s6_server,lpar,s8_prty,s8_period,plot,point}` |
 | 118 | TCP/IP statistics (legacy): API connections (1, 2), FTP client (3), stack statistics (5), TN3270E server sessions (20, 21) | `smf118`, `smf118_api`, `smf118_ftpc`, `smf118_stat`, `smf118_telnet` |
 | 119 | TCP/IP statistics: TCP connection initiation and termination (1, 2), FTP client transfers (3), stack statistics (5), interfaces (6), server ports (7), UDP socket close (10), FTP server transfers and logon failures (70, 72) | `smf119`, `smf119_conn_init`, `smf119_conn_term`, `smf119_ftpc`, `smf119_stat`, `smf119_intf`, `smf119_tcp_port`, `smf119_udp_port`, `smf119_udp_close`, `smf119_ftps`, `smf119_ftps_logon` |
 
@@ -128,7 +129,7 @@ A binary built with `CGO_ENABLED=0` compiles but fails at run time with *"go-sql
    //SYSPRINT DD SYSOUT=*
    //SYSIN    DD *
      INDD(DUMPIN,OPTIONS(DUMP))
-     OUTDD(DUMPOUT,TYPE(2:6,14:18,20,21,23,30,32:35,40:42,50,60:62,64:66,70:75,78,80,82,84,88:90,92,118,119))
+     OUTDD(DUMPOUT,TYPE(2:6,14:18,20,21,23,30,32:35,40:42,50,60:62,64:66,70:75,78,80,82,84,88:90,92,99,118,119))
    /*
    ```
 
@@ -445,6 +446,7 @@ smf2db only decodes the record types, subtypes and sections it could check again
   - type 2: subtypes 1 and 2 (signature records);
   - type 23: the logstream statistics section (the spin lock and bind break sections are for IBM internal use);
   - type 119: every subtype except 1, 2, 3, 5, 6, 7, 10, 70 and 72; the AT-TLS and IP filter sections of subtype 2, the SOCKS and load module sections of FTP records, IPv6 IP/ICMP statistics and IPv6 HOME address sections;
+  - type 99: subtypes 5, 7 and 9 to 14; the software licensing table section (1), the EWLM class, cross memory delay, queue server, I/O subsystem and AI data sections (2), the queue and server instance plots (3), and the image CPU and SYSH CPU plot sections (8);
   - type 118: subtypes 4 (TN3270 client) and 70 to 75 (FTP server), and the FTP client's variable z/OS UNIX file names;
   - type 92: subtypes 1 to 9, 12, 13, 15 and the zFS subtypes 50 to 59.
 - Some fields sit past the end of the sections that older z/OS releases write, so they are NULL with the sample data and were only checked against the manual.
