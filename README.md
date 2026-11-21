@@ -68,6 +68,7 @@ Elapsed time: 9.29 seconds
 | 90 | System status: SWITCH SMF (6), VARY WLM policy (24), RESET (30) | `smf090`, `smf090_switch`, `smf090_wlm`, `smf090_reset` |
 | 92 | z/OS UNIX file system activity: file open, close, delete/rename, access count | `smf092`, `smf092_open`, `smf092_close`, `smf092_delete`, `smf092_count` |
 | 118 | TCP/IP statistics (legacy): API connections (1, 2), FTP client (3), stack statistics (5), TN3270E server sessions (20, 21) | `smf118`, `smf118_api`, `smf118_ftpc`, `smf118_stat`, `smf118_telnet` |
+| 119 | TCP/IP statistics: TCP connection initiation and termination (1, 2), FTP client transfers (3), stack statistics (5), interfaces (6), server ports (7), UDP socket close (10), FTP server transfers and logon failures (70, 72) | `smf119`, `smf119_conn_init`, `smf119_conn_term`, `smf119_ftpc`, `smf119_stat`, `smf119_intf`, `smf119_tcp_port`, `smf119_udp_port`, `smf119_udp_close`, `smf119_ftps`, `smf119_ftps_logon` |
 
 Records of any other type are counted in the summary but not stored. Some types, subtypes and sections are not implemented yet because there was not enough test data to verify them; see [Limitations](#limitations). If you have SMF data to share, [contributions are welcome](#contributing-smf-data).
 
@@ -119,7 +120,7 @@ A binary built with `CGO_ENABLED=0` compiles but fails at run time with *"go-sql
    //SYSPRINT DD SYSOUT=*
    //SYSIN    DD *
      INDD(DUMPIN,OPTIONS(DUMP))
-     OUTDD(DUMPOUT,TYPE(4:6,14:18,21,30,32:35,41,42,50,60:62,64:66,70:75,78,80,82,84,88:90,92,118))
+     OUTDD(DUMPOUT,TYPE(4:6,14:18,21,30,32:35,41,42,50,60:62,64:66,70:75,78,80,82,84,88:90,92,118,119))
    /*
    ```
 
@@ -410,7 +411,7 @@ SELECT name, type FROM pragma_table_info('smf042_ds');
 
 ## Reference
 
-Record layouts come from IBM **z/OS MVS System Management Facilities (SMF)**, SA38-0667 (z/OS 3.1 edition), except type 80 (RACF), which comes from **z/OS Security Server RACF Macros and Interfaces**, SA23-2288, type 82 (ICSF), from **z/OS Cryptographic Services ICSF System Programmer's Guide**, SC14-7507, type 50 (VTAM tuning statistics), from **z/OS Communications Server: SNA Network Implementation Guide**, SC27-3672, and type 118 (TCP/IP), from **z/OS Communications Server: IP Programmer's Guide and Reference**, SC27-3659. They describe every field, its units and its flag bits. The manuals are not distributed with this project.
+Record layouts come from IBM **z/OS MVS System Management Facilities (SMF)**, SA38-0667 (z/OS 3.1 edition), except type 80 (RACF), which comes from **z/OS Security Server RACF Macros and Interfaces**, SA23-2288, type 82 (ICSF), from **z/OS Cryptographic Services ICSF System Programmer's Guide**, SC14-7507, type 50 (VTAM tuning statistics), from **z/OS Communications Server: SNA Network Implementation Guide**, SC27-3672, and types 118 and 119 (TCP/IP), from **z/OS Communications Server: IP Programmer's Guide and Reference**, SC27-3659. They describe every field, its units and its flag bits. The manuals are not distributed with this project.
 
 Some records differ from the manual. smf2db follows the data, and [AGENTS.md](AGENTS.md) lists each known difference. For example, many type 42 records leave the triplet count at 0, and some fields documented as EBCDIC actually contain binary data.
 
@@ -418,7 +419,7 @@ Some records differ from the manual. smf2db follows the data, and [AGENTS.md](AG
 
 smf2db only decodes the record types, subtypes and sections it could check against real SMF records: every offset and data format was compared with sample dumps, not taken from the manuals alone. The manuals have wrong offsets and fields whose real format differs from the documented one (see [AGENTS.md](AGENTS.md)), so a layout that was never seen in real data is not implemented. **Some records are therefore not implemented yet because there was not enough test data for them:**
 
-- **Record types not decoded** (only counted in the summary): every type not in the table above. Some of them, such as 2, 3, 20, 23, 40, 100, 102, 110, 115, 119, 133 and the vendor types 199 to 255, have sample data and are on the to-do list; the others have none.
+- **Record types not decoded** (only counted in the summary): every type not in the table above. Some of them, such as 2, 3, 20, 23, 40, 100, 102, 110, 115, 133 and the vendor types 199 to 255, have sample data and are on the to-do list; the others have none.
 - **Subtypes and sections not decoded** within supported types:
   - type 6: only the IP PrintWay sections; JES2, JES3, PSF and External Writer records get only the common header row;
   - type 32: subtypes 3 and 4 (DETAIL accounting, with CPU and I/O per command);
@@ -433,6 +434,7 @@ smf2db only decodes the record types, subtypes and sections it could check again
   - type 88: subtype 11 (structure alter);
   - type 89: the tenant resource group and tenant intersection sections;
   - type 90: every subtype except 6, 24 and 30; the subtype 24 WLM service policy is kept as a BLOB (it is mapped by IWMSVPOL, documented in z/OS MVS Data Areas);
+  - type 119: every subtype except 1, 2, 3, 5, 6, 7, 10, 70 and 72; the AT-TLS and IP filter sections of subtype 2, the SOCKS and load module sections of FTP records, IPv6 IP/ICMP statistics and IPv6 HOME address sections;
   - type 118: subtypes 4 (TN3270 client) and 70 to 75 (FTP server), and the FTP client's variable z/OS UNIX file names;
   - type 92: subtypes 1 to 9, 12, 13, 15 and the zFS subtypes 50 to 59.
 - Some fields sit past the end of the sections that older z/OS releases write, so they are NULL with the sample data and were only checked against the manual.

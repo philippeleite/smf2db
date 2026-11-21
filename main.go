@@ -57,6 +57,7 @@ var parseTable = map[int]func([]byte){
 	90: smf090Parse,
 	92: smf092Parse,
 	118: smf118Parse,
+	119: smf119Parse,
 }
 
 func smfParse(rec []byte) {
