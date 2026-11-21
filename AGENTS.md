@@ -7,8 +7,8 @@ Guide for AI agents (and humans) working in this repository.
 `smf2db` is a Go command-line utility that reads an **IBM z/OS SMF (System Management Facilities) file**, transferred from the mainframe in binary **with the RDW preserved**, and writes the decoded records to a **SQLite** database.
 
 - Version: `0.1.0` (`version` variable in `main.go`)
-- Module: `smf2db`, `go 1.16`, a single `main` package (all `.go` files live in the root)
-- Only dependency: `github.com/mattn/go-sqlite3 v1.14.7`, which **requires CGO**
+- Module: `smf2db`, `go 1.27`, a single `main` package (all `.go` files live in the root)
+- Only dependency: `github.com/mattn/go-sqlite3 v1.14.53`, which **requires CGO**
 
 ## Build, run and test
 

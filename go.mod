@@ -1,5 +1,5 @@
 module smf2db
 
-go 1.16
+go 1.27
 
-require github.com/mattn/go-sqlite3 v1.14.7
+require github.com/mattn/go-sqlite3 v1.14.53
