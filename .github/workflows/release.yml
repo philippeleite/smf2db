@@ -78,6 +78,8 @@ jobs:
       - name: "Write release notes"
         run: |
           tag="$GITHUB_REF_NAME"
+          # actions/checkout replaces the triggering tag with a lightweight one; refetch the annotated tag.
+          git fetch --force --tags origin
           prev=$(git describe --tags --abbrev=0 "$tag^" 2>/dev/null || true)
           {
             # An annotated tag's message, if any, opens the notes.
