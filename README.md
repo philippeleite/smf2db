@@ -46,6 +46,7 @@ Elapsed time: 9.29 seconds
 | 33 | APPC/MVS TP accounting: conversations (subtype 2) | `smf033`, `smf033_conv` |
 | 34 | TS-step termination (TSO/E logoff) | `smf034`, `smf034_dev` |
 | 35 | TSO/E logoff (session totals) | `smf035` |
+| 40 | Dynamic DD: unallocation, concatenation and deconcatenation, with EXCP counts per device | `smf040`, `smf040_dev` |
 | 41 | Data-in-virtual objects and VLF statistics | `smf041` and `smf041_{prod,obja,obju,obji,vlfs}` |
 | 42 | DFSMS statistics and configuration (subtypes 1–6, 9, 21, 24, 27) | `smf042` and `smf042_*` (see below) |
 | 50 | VTAM tuning statistics: common header for every resource, TCP connection counters | `smf050`, `smf050_tcp` |
@@ -122,7 +123,7 @@ A binary built with `CGO_ENABLED=0` compiles but fails at run time with *"go-sql
    //SYSPRINT DD SYSOUT=*
    //SYSIN    DD *
      INDD(DUMPIN,OPTIONS(DUMP))
-     OUTDD(DUMPOUT,TYPE(4:6,14:18,20,21,23,30,32:35,41,42,50,60:62,64:66,70:75,78,80,82,84,88:90,92,118,119))
+     OUTDD(DUMPOUT,TYPE(4:6,14:18,20,21,23,30,32:35,40:42,50,60:62,64:66,70:75,78,80,82,84,88:90,92,118,119))
    /*
    ```
 
@@ -421,7 +422,7 @@ Some records differ from the manual. smf2db follows the data, and [AGENTS.md](AG
 
 smf2db only decodes the record types, subtypes and sections it could check against real SMF records: every offset and data format was compared with sample dumps, not taken from the manuals alone. The manuals have wrong offsets and fields whose real format differs from the documented one (see [AGENTS.md](AGENTS.md)), so a layout that was never seen in real data is not implemented. **Some records are therefore not implemented yet because there was not enough test data for them:**
 
-- **Record types not decoded** (only counted in the summary): every type not in the table above. Some of them, such as 2, 3, 40, 100, 102, 110, 115, 133 and the vendor types 199 to 255, have sample data and are on the to-do list; the others have none.
+- **Record types not decoded** (only counted in the summary): every type not in the table above. Some of them, such as 2, 3, 100, 102, 110, 115, 133 and the vendor types 199 to 255, have sample data and are on the to-do list; the others have none.
 - **Subtypes and sections not decoded** within supported types:
   - type 6: only the IP PrintWay sections; JES2, JES3, PSF and External Writer records get only the common header row;
   - type 32: subtypes 3 and 4 (DETAIL accounting, with CPU and I/O per command);

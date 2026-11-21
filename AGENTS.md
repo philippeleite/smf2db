@@ -86,6 +86,7 @@ smf2db [options] smfFile [dbFile]
 | 33 (APPC/MVS TP accounting) | `smf033.go` | `smf033` (header, product, address space ID), `smf033_conv` (subtype 2 conversations, with TP names and LUWID) |
 | 34 (TS-step termination) | `smf034.go` | `smf034` (header, accounting and relocate sections in one row), `smf034_dev` (EXCP entries) |
 | 35 (TSO/E logoff) | `smf035.go` | `smf035` (header, accounting fields and relocate section in one row) |
+| 40 (dynamic DD) | `smf040.go` | `smf040` (header), `smf040_dev` (EXCP entries); only `data/smfdata` has type 40 |
 | 41 (DIV / VLF) | `smf041.go` | `smf041`, `smf041_{prod,obja,obju,obji,vlfs}` |
 | 42 (DFSMS statistics) | `smf042.go`, `smf042misc.go`, `smf042io.go` | `smf042` (header + product section, every subtype) and per subtype: 1 `smf042_bmf`, `smf042_bmf_sc`; 2 `smf042_cu`, `smf042_cu_vol`; 3 `smf042_ea`; 4 `smf042_ext`; 5 `smf042_sc`, `smf042_vol`, `smf042_vol_{vtoc,vtix,vvds}`; 6 `smf042_job`, `smf042_ds`; 9 `smf042_x37`; 21 `smf042_mdel`, `smf042_mdel_alias`; 24 `smf042_madd`, `smf042_madd_alias`; 27 `smf042_vtoc` |
 | 50 (VTAM tuning statistics) | `smf050.go` | `smf050` (common header + raw body, every resource), `smf050_tcp` (TCP connections, version F0F3) |
@@ -161,6 +162,8 @@ Type 33: the conversation ID section locates the partner/local TP name and LUWID
 Type 20: laid out like type 5; `SMF20RLO` is an offset from the flag byte (`rec[0]`), as in type 4. The only sample record (in `data/smfdata`) has no accounting fields; its reader time, RACF user and group match the type 30 records of the same job.
 
 Type 23: the header triplets start at `rec[16]` (manual offset 20). The interval counters (`SMF23NGD`…`SMF23SRD`) equal the differences of consecutive cumulative ones (`SMF23NGR`…`SMF23SRB`) in the samples; `SMF23TOD` is UTC. Not decoded: the logstream statistics section (no sample data) and the spin lock and bind break sections (IBM internal use).
+
+Type 40: header like type 34 (`TDD*` names), then `TDDVAR` (2 + 8 × devices) and the 8-byte EXCP entries at `rec[62]`. Every sample record is an unallocation (`TDDFLG` 2) with one device; their DASD device numbers all appear in type 74 subtype 1 (`SMF74NUM`).
 
 Type 34: laid out like type 4 (`TIV*` names, no triplets). `TIVRLCT` is an offset from the flag byte (`rec[0]`), as in type 4; the accounting section follows the EXCP entries (`TIVVAR` = 2 + 8 × entries, none in the samples). Every sample record matches a type 32 session-end record (user and logon time).
 
