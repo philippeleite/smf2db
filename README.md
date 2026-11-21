@@ -46,6 +46,7 @@ Elapsed time: 9.29 seconds
 | 35 | TSO/E logoff (session totals) | `smf035` |
 | 41 | Data-in-virtual objects and VLF statistics | `smf041` and `smf041_{prod,obja,obju,obji,vlfs}` |
 | 42 | DFSMS statistics and configuration (subtypes 1–6, 9, 21, 24, 27) | `smf042` and `smf042_*` (see below) |
+| 50 | VTAM tuning statistics: common header for every resource, TCP connection counters | `smf050`, `smf050_tcp` |
 | 60 | VSAM volume data set (VVDS) updated | `smf060` |
 | 61 | Integrated catalog facility define activity | `smf061` |
 | 62 | VSAM component or cluster opened | `smf062`, `smf062_vol` |
@@ -117,7 +118,7 @@ A binary built with `CGO_ENABLED=0` compiles but fails at run time with *"go-sql
    //SYSPRINT DD SYSOUT=*
    //SYSIN    DD *
      INDD(DUMPIN,OPTIONS(DUMP))
-     OUTDD(DUMPOUT,TYPE(4:6,14:18,21,30,32:35,41,42,60:62,64:66,70:75,78,80,82,84,88:90,92))
+     OUTDD(DUMPOUT,TYPE(4:6,14:18,21,30,32:35,41,42,50,60:62,64:66,70:75,78,80,82,84,88:90,92))
    /*
    ```
 
@@ -408,7 +409,7 @@ SELECT name, type FROM pragma_table_info('smf042_ds');
 
 ## Reference
 
-Record layouts come from IBM **z/OS MVS System Management Facilities (SMF)**, SA38-0667 (z/OS 3.1 edition), except type 80 (RACF), which comes from **z/OS Security Server RACF Macros and Interfaces**, SA23-2288, and type 82 (ICSF), from **z/OS Cryptographic Services ICSF System Programmer's Guide**, SC14-7507. They describe every field, its units and its flag bits. The manuals are not distributed with this project.
+Record layouts come from IBM **z/OS MVS System Management Facilities (SMF)**, SA38-0667 (z/OS 3.1 edition), except type 80 (RACF), which comes from **z/OS Security Server RACF Macros and Interfaces**, SA23-2288, type 82 (ICSF), from **z/OS Cryptographic Services ICSF System Programmer's Guide**, SC14-7507, and type 50 (VTAM tuning statistics), from **z/OS Communications Server: SNA Network Implementation Guide**, SC27-3672. They describe every field, its units and its flag bits. The manuals are not distributed with this project.
 
 Some records differ from the manual. smf2db follows the data, and [AGENTS.md](AGENTS.md) lists each known difference. For example, many type 42 records leave the triplet count at 0, and some fields documented as EBCDIC actually contain binary data.
 
@@ -416,12 +417,13 @@ Some records differ from the manual. smf2db follows the data, and [AGENTS.md](AG
 
 smf2db only decodes the record types, subtypes and sections it could check against real SMF records: every offset and data format was compared with sample dumps, not taken from the manuals alone. The manuals have wrong offsets and fields whose real format differs from the documented one (see [AGENTS.md](AGENTS.md)), so a layout that was never seen in real data is not implemented. **Some records are therefore not implemented yet because there was not enough test data for them:**
 
-- **Record types not decoded** (only counted in the summary): every type not in the table above. Some of them, such as 2, 3, 20, 23, 40, 50, 100, 102, 110, 115, 118, 119, 133 and the vendor types 199 to 255, have sample data and are on the to-do list; the others have none.
+- **Record types not decoded** (only counted in the summary): every type not in the table above. Some of them, such as 2, 3, 20, 23, 40, 100, 102, 110, 115, 118, 119, 133 and the vendor types 199 to 255, have sample data and are on the to-do list; the others have none.
 - **Subtypes and sections not decoded** within supported types:
   - type 6: only the IP PrintWay sections; JES2, JES3, PSF and External Writer records get only the common header row;
   - type 32: subtypes 3 and 4 (DETAIL accounting, with CPU and I/O per command);
   - type 33: subtype 1 (TP identification and usage) and the user data field section;
   - type 42: only the subtypes in the table above, and within them not the concurrent copy sessions (4), the volume metrics, system I/O and background sections (5), or the synchronous I/O sections (6);
+  - type 50: the MPC (multipath channel) and CTC line records keep only the common header and a raw BLOB: their counters are zero in the samples, so their layout could not be checked; SNA controller, channel-to-channel and RoCE records are not in the samples;
   - type 70: the logical core and tenant resource group sections (1), and the CCA, accelerator and PKCS11 coprocessor sections (2);
   - type 74: subtypes 4 (coupling facility) and 7 to 10, the XCF path sections, the cache device extension sections and the HFS file system sections;
   - type 78: the private area and private area subpool sections (2);

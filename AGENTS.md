@@ -86,6 +86,7 @@ smf2db [options] smfFile [dbFile]
 | 35 (TSO/E logoff) | `smf035.go` | `smf035` (header, accounting fields and relocate section in one row) |
 | 41 (DIV / VLF) | `smf041.go` | `smf041`, `smf041_{prod,obja,obju,obji,vlfs}` |
 | 42 (DFSMS statistics) | `smf042.go`, `smf042misc.go`, `smf042io.go` | `smf042` (header + product section, every subtype) and per subtype: 1 `smf042_bmf`, `smf042_bmf_sc`; 2 `smf042_cu`, `smf042_cu_vol`; 3 `smf042_ea`; 4 `smf042_ext`; 5 `smf042_sc`, `smf042_vol`, `smf042_vol_{vtoc,vtix,vvds}`; 6 `smf042_job`, `smf042_ds`; 9 `smf042_x37`; 21 `smf042_mdel`, `smf042_mdel_alias`; 24 `smf042_madd`, `smf042_madd_alias`; 27 `smf042_vtoc` |
+| 50 (VTAM tuning statistics) | `smf050.go` | `smf050` (common header + raw body, every resource), `smf050_tcp` (TCP connections, version F0F3) |
 | 60 (VVDS update) | `smf060.go` | `smf060` |
 | 61 (catalog define) | `smfcatalog.go` | `smf061` |
 | 62 (VSAM component or cluster opened) | `smf062.go` | `smf062`, `smf062_vol` |
@@ -157,6 +158,8 @@ Type 34: laid out like type 4 (`TIV*` names, no triplets). `TIVRLCT` is an offse
 
 Type 35: laid out like type 5; the relocate section has no offset field and starts right after the last accounting field. Every sample record matches its type 34 step record (same user, logon time, TCB time, TPUTs and CPU service).
 
+Type 50: layouts are in the SNA Network Implementation Guide (`data/istimp0_v3r1.pdf`, SC27-3672, "Tuning statistics file report" tables) and depend on the resource; fields have no IBM names, so columns are `SMF50_` + the IST message keyword. The extension length, attachment type and version sit at the same offsets in every format; version `03` (TCP connection) is decoded and checked (bytes between packets and packets × largest packet). MPC/CTC records (versions `02`, and `01`, which the manual does not document) have all-zero counters in the samples and are kept as a BLOB.
+
 Type 42 notes:
 - The subtype triplets sit at fixed offsets after the product triplet. `SMF42NT` (number of triplets) is 0 in most real records, so it is ignored.
 - Subtype 5 volumes and subtype 6 data sets are linked lists (`S42VTNXT`, `S42DSNXT`); `smf042Chain` walks them and stops if a pointer goes backwards. Child rows link by `ID` (and `S42VTSER` for the volume component tables).
@@ -167,7 +170,7 @@ Type 42 notes:
 
 ## Implementation policy: verified against sample data
 
-Only implement record types, subtypes and sections that have records in the sample files (`data/smftest.rdw`, `data/smfdata`), and check every new parser against them: offsets, section lengths, value ranges, cross-checks between fields (min ≤ avg ≤ max, counts that must match another field, index joins). The manuals contain wrong offsets and misdocumented formats, so an unverified layout is not added. Before starting a type, count its records, subtypes and section triplets in both files; types and sections with no data are skipped and listed in the README "Limitations" section, which tells users that they are missing for lack of test data and invites contributions of SMF data ("Contributing SMF data"). Keep that list current when a type is added. When a type's SMF manual chapter only points to another product manual (as for types 80 and 82), add that manual to `data/` first.
+Only implement record types, subtypes and sections that have records in the sample files (`data/smftest.rdw`, `data/smfdata`), and check every new parser against them: offsets, section lengths, value ranges, cross-checks between fields (min ≤ avg ≤ max, counts that must match another field, index joins). The manuals contain wrong offsets and misdocumented formats, so an unverified layout is not added. Before starting a type, count its records, subtypes and section triplets in both files; types and sections with no data are skipped and listed in the README "Limitations" section, which tells users that they are missing for lack of test data and invites contributions of SMF data ("Contributing SMF data"). Keep that list current when a type is added. When a type's SMF manual chapter only points to another product manual (as for types 50, 80 and 82), add that manual to `data/` first.
 
 ## Parser pattern (follow it when adding a new type)
 
@@ -218,7 +221,7 @@ SQLite is opened with `_mutex=no`, `_synchronous=off`, `_journal_mode=off`, `_lo
 
 ## Reference
 
-Record layouts: IBM *z/OS 3.1 MVS System Management Facilities (SMF)*, SA38-0667-60, kept locally at `data/ieag200_v3r1.pdf` (git-ignored). This is the source of truth for every parser offset, except type 80, whose layout is in *z/OS 3.1 Security Server RACF Macros and Interfaces*, SA23-2288-60, at `data/icha300_v3r1.pdf`, and type 82, in *z/OS 3.1 Cryptographic Services ICSF System Programmer's Guide*, SC14-7507-60, at `data/csfb200_icsf_spg_hcr77e0.pdf`.
+Record layouts: IBM *z/OS 3.1 MVS System Management Facilities (SMF)*, SA38-0667-60, kept locally at `data/ieag200_v3r1.pdf` (git-ignored). This is the source of truth for every parser offset, except type 80, whose layout is in *z/OS 3.1 Security Server RACF Macros and Interfaces*, SA23-2288-60, at `data/icha300_v3r1.pdf`, type 82, in *z/OS 3.1 Cryptographic Services ICSF System Programmer's Guide*, SC14-7507-60, at `data/csfb200_icsf_spg_hcr77e0.pdf`, and type 50, in *z/OS 3.1 Communications Server: SNA Network Implementation Guide*, SC27-3672-60, at `data/istimp0_v3r1.pdf`.
 
 - Search it as text: `pdftotext -layout data/ieag200_v3r1.pdf <out>.txt`, then grep for the chapter heading, e.g. `Record type 41 (X'29') --`.
 - Read field tables with `-raw`, not `-layout`: `-layout` interleaves the Length/Format column with other rows. Find the page with `pdftotext -f N -l N` + grep for a field name, then `pdftotext -f N -l M -raw data/ieag200_v3r1.pdf - | grep -E "^[0-9]+ [0-9A-F]+ SMF21"` prints clean `offset hex name length format` rows.

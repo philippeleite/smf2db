@@ -35,6 +35,7 @@ var parseTable = map[int]func([]byte){
 	35: smf035Parse,
 	41: smf041Parse,
 	42: smf042Parse,
+	50: smf050Parse,
 	60: smf060Parse,
 	61: smf061Parse,
 	62: smf062Parse,
