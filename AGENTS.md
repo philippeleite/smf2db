@@ -107,6 +107,7 @@ smf2db [options] smfFile [dbFile]
 | 89 (usage data) | `smf089.go` | `smf089` (header, product and system ID sections) and `smf089_usage`, `smf089_isect` (1), `smf089_state` (2) |
 | 90 (system status) | `smf090.go` | `smf090` (header, product section) and `smf090_switch` (6), `smf090_wlm` (24), `smf090_reset` (30) |
 | 92 (z/OS UNIX file system activity) | `smf092.go` | `smf092` (header, subsystem and identification sections) and `smf092_open` (10), `smf092_close` (11, 16), `smf092_delete` (14), `smf092_count` (17) |
+| 118 (TCP/IP statistics, legacy) | `smf118.go` | `smf118` (header) and `smf118_api` (1, 2), `smf118_ftpc` (3), `smf118_stat` (5), `smf118_telnet` (20, 21) |
 
 Type 6 has five writers (External Writer, JES2, JES3, PSF, IP PrintWay) that share the header up to `SMF6SBS`; their sections follow in `SMF6PAD1` bit order, each with its own 2-byte length. Only IP PrintWay sections are decoded, since it is the only writer in the sample data. The extended-mode fields (`SMF6BYTD`, `SMF6URI`, `SMF6ACCT`) are implemented from the manual but untested: every sample record is basic mode.
 
@@ -160,6 +161,8 @@ Type 35: laid out like type 5; the relocate section has no offset field and star
 
 Type 50: layouts are in the SNA Network Implementation Guide (`data/istimp0_v3r1.pdf`, SC27-3672, "Tuning statistics file report" tables) and depend on the resource; fields have no IBM names, so columns are `SMF50_` + the IST message keyword. The extension length, attachment type and version sit at the same offsets in every format; version `03` (TCP connection) is decoded and checked (bytes between packets and packets × largest packet). MPC/CTC records (versions `02`, and `01`, which the manual does not document) have all-zero counters in the samples and are kept as a BLOB.
 
+Type 118: layouts are in the IP Programmer's Guide and Reference (`data/halx001_v3r1.pdf`, SC27-3659, appendix "Type 118 SMF records"), whose offset column reads `24(x'18')` (normalize it to `24 18` before running `tools/genfields.py`). Offsets include the RDW; flat records start their data at `rec[20]`. The subtype is at `rec[18]` in every record; the TCPIPSTATISTICS table shows its header 2 bytes off, but its area triplets sit at the standard `rec[24]`… positions. The `a` kind (`fields.go`) stores IPv4 addresses as dotted text. `SMFFTCYF` (HFP) equals `SMFFTCBC` in the samples. Not decoded (no sample data): subtypes 4, 70–75, FTP client UNIX file names.
+
 Type 42 notes:
 - The subtype triplets sit at fixed offsets after the product triplet. `SMF42NT` (number of triplets) is 0 in most real records, so it is ignored.
 - Subtype 5 volumes and subtype 6 data sets are linked lists (`S42VTNXT`, `S42DSNXT`); `smf042Chain` walks them and stops if a pointer goes backwards. Child rows link by `ID` (and `S42VTSER` for the volume component tables).
@@ -170,7 +173,7 @@ Type 42 notes:
 
 ## Implementation policy: verified against sample data
 
-Only implement record types, subtypes and sections that have records in the sample files (`data/smftest.rdw`, `data/smfdata`), and check every new parser against them: offsets, section lengths, value ranges, cross-checks between fields (min ≤ avg ≤ max, counts that must match another field, index joins). The manuals contain wrong offsets and misdocumented formats, so an unverified layout is not added. Before starting a type, count its records, subtypes and section triplets in both files; types and sections with no data are skipped and listed in the README "Limitations" section, which tells users that they are missing for lack of test data and invites contributions of SMF data ("Contributing SMF data"). Keep that list current when a type is added. When a type's SMF manual chapter only points to another product manual (as for types 50, 80 and 82), add that manual to `data/` first.
+Only implement record types, subtypes and sections that have records in the sample files (`data/smftest.rdw`, `data/smfdata`), and check every new parser against them: offsets, section lengths, value ranges, cross-checks between fields (min ≤ avg ≤ max, counts that must match another field, index joins). The manuals contain wrong offsets and misdocumented formats, so an unverified layout is not added. Before starting a type, count its records, subtypes and section triplets in both files; types and sections with no data are skipped and listed in the README "Limitations" section, which tells users that they are missing for lack of test data and invites contributions of SMF data ("Contributing SMF data"). Keep that list current when a type is added. When a type's SMF manual chapter only points to another product manual (as for types 50, 80, 82 and 118), add that manual to `data/` first.
 
 ## Parser pattern (follow it when adding a new type)
 
@@ -221,7 +224,7 @@ SQLite is opened with `_mutex=no`, `_synchronous=off`, `_journal_mode=off`, `_lo
 
 ## Reference
 
-Record layouts: IBM *z/OS 3.1 MVS System Management Facilities (SMF)*, SA38-0667-60, kept locally at `data/ieag200_v3r1.pdf` (git-ignored). This is the source of truth for every parser offset, except type 80, whose layout is in *z/OS 3.1 Security Server RACF Macros and Interfaces*, SA23-2288-60, at `data/icha300_v3r1.pdf`, type 82, in *z/OS 3.1 Cryptographic Services ICSF System Programmer's Guide*, SC14-7507-60, at `data/csfb200_icsf_spg_hcr77e0.pdf`, and type 50, in *z/OS 3.1 Communications Server: SNA Network Implementation Guide*, SC27-3672-60, at `data/istimp0_v3r1.pdf`.
+Record layouts: IBM *z/OS 3.1 MVS System Management Facilities (SMF)*, SA38-0667-60, kept locally at `data/ieag200_v3r1.pdf` (git-ignored). This is the source of truth for every parser offset, except type 80, whose layout is in *z/OS 3.1 Security Server RACF Macros and Interfaces*, SA23-2288-60, at `data/icha300_v3r1.pdf`, type 82, in *z/OS 3.1 Cryptographic Services ICSF System Programmer's Guide*, SC14-7507-60, at `data/csfb200_icsf_spg_hcr77e0.pdf`, type 50, in *z/OS 3.1 Communications Server: SNA Network Implementation Guide*, SC27-3672-60, at `data/istimp0_v3r1.pdf`, and types 118 and 119, in *z/OS 3.1 Communications Server: IP Programmer's Guide and Reference*, SC27-3659-60, at `data/halx001_v3r1.pdf`.
 
 - Search it as text: `pdftotext -layout data/ieag200_v3r1.pdf <out>.txt`, then grep for the chapter heading, e.g. `Record type 41 (X'29') --`.
 - Read field tables with `-raw`, not `-layout`: `-layout` interleaves the Length/Format column with other rows. Find the page with `pdftotext -f N -l N` + grep for a field name, then `pdftotext -f N -l M -raw data/ieag200_v3r1.pdf - | grep -E "^[0-9]+ [0-9A-F]+ SMF21"` prints clean `offset hex name length format` rows.

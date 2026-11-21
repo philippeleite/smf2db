@@ -37,6 +37,9 @@ func TestFieldsValues(t *testing.T) {
 	if got := (fields{{"M", 0, 'M', 8}}).values(section{0xd2, 0x72, 0x28, 0xa6, 0x3b, 0x4c, 0x00, 0x00})[0]; got != 0xd27228a63b4c0000>>12 {
 		t.Errorf("M: got %v", got)
 	}
+	if got := (fields{{"IP", 0, 'a', 4}}).values(section{172, 16, 8, 250})[0]; got != "172.16.8.250" {
+		t.Errorf("a: got %v", got)
+	}
 	wide := fields{{"W", 0, 'w', 16}}.values(section{0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 2})
 	if wide[0] != 18446744073709551618.0 { // 2^64 + 2
 		t.Errorf("wide: got %v", wide[0])

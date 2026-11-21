@@ -24,7 +24,7 @@ func (f fields) columns() string {
 	for i, fd := range f {
 		typ := "INT"
 		switch fd.kind {
-		case 'c', 'x':
+		case 'c', 'x', 'a':
 			typ = "TEXT"
 		case 'b':
 			typ = "BLOB"
@@ -48,6 +48,7 @@ func (f fields) columns() string {
 //	b raw bytes         t TOD clock        f IBM hex float    p packed decimal integer (0..9 digits + sign)
 //	h packed time 0hhmmssF                 d packed date 0cyydddF                    i packed interval mmsstttF, in seconds
 //	H packed time hhmmsstF (tenths of a second)  T binary time in hundredths of a second since midnight (SMF header times)
+//	a IPv4 address (4 bytes) as dotted text
 //	M TOD clock as microseconds since 1900, an integer (keeps the precision todtime's text drops; subtract two for durations)
 //	w unsigned binary wider than 8 bytes (such as 16-byte sums of squares), as an approximate float
 func (f fields) values(s section) []interface{} {
@@ -85,6 +86,8 @@ func (f fields) values(s section) []interface{} {
 			v[i] = fmt.Sprintf("0000-00-00 %s:%s:%s.000", d[1:3], d[3:5], d[5:7])
 		case 'T':
 			v[i] = smftime(b)
+		case 'a':
+			v[i] = fmt.Sprintf("%d.%d.%d.%d", b[0], b[1], b[2], b[3])
 		case 'M':
 			v[i] = s.num(fd.off, 8) >> 12 & (1<<52 - 1) // bits 0-51 of the TOD clock, in microseconds
 		case 'H':
