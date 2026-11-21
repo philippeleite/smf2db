@@ -92,6 +92,10 @@ Type 42 subtypes and their tables:
 | 24 | PDS/PDSE member add/replace | `smf042_madd`, `smf042_madd_alias` |
 | 27 | VTOC audit log | `smf042_vtoc` |
 
+## Download
+
+Prebuilt binaries for Linux (x86_64), Windows (x86_64) and macOS (Apple silicon) are attached to each [release](https://github.com/philippeleite/smf2db/releases). Unzip the file for your platform and run `smf2db`. The release notes list what changed since the previous version.
+
 ## Building
 
 smf2db is written in Go and uses [mattn/go-sqlite3](https://github.com/mattn/go-sqlite3), which needs **CGO and a C compiler**.
@@ -474,6 +478,15 @@ CGO_ENABLED=1 go test ./...      # also runs the end-to-end test when data/smfte
 ```
 
 The end-to-end test converts a local SMF file and compares the record counts against the IFASMFDP report of the dump job. Sample data is not included in the repository.
+
+### Releases
+
+Pushing a tag that starts with `v` runs the [release workflow](.github/workflows/release.yml): it tests and builds the binaries natively on Linux, Windows and macOS (go-sqlite3 needs CGO), sets the version shown by `smf2db -v` from the tag, and publishes a GitHub release with the zipped binaries. The release notes list the commit subjects since the previous tag, preceded by the tag message when the tag is annotated:
+
+```sh
+git tag -a v0.2.0 -m "Summary of this release"
+git push origin v0.2.0
+```
 
 [AGENTS.md](AGENTS.md) describes the code structure, the parser conventions and how to add a new record type.
 

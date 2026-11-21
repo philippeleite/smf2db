@@ -34,6 +34,8 @@ Tests:
 - `smftest_test.go` (`TestSmfTestFile`): runs `main()` on `data/smftest.rdw` (363 MB, 815,993 records, 2017) and checks the per-type counts printed by smf2db, and the row count of every parsed type's main table (`smfNNN`), against the RECORDS WRITTEN column of the IFASMFDP report in `data/smftest.txt`. It also fails if smf2db writes anything to the log (skipped record, failed `Prepare`/`Exec`), which catches child tables left empty by a broken statement. It skips when those files are missing or SQLite has no CGO. It only checks counts, not field values, and only for types registered in `parseTable`.
 - `data/smfdata` (26 MB, 2019) is another local sample, with no reference report.
 
+Release: pushing a `v*` tag runs `.github/workflows/release.yml`. It runs `go vet` and `go test`, builds natively with CGO on ubuntu, windows and macos runners (cross-compiling go-sqlite3 is avoided), injects the version with `-ldflags "-X main.version=<tag without v>"`, zips `smf2db-x86_64-linux-gnu`, `smf2db-x86_64-windows` and `smf2db-aarch64-macos`, and creates or updates the release with the `gh` CLI (no third-party release action). The notes are the annotated tag message (if any) followed by the commit subjects since the previous tag, so commit subjects should summarize each change.
+
 Usage:
 
 ```
