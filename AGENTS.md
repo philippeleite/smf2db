@@ -71,6 +71,7 @@ smf2db [options] smfFile [dbFile]
 
 | Type | File | Tables |
 |---|---|---|
+| 2, 3 (dump header and trailer) | `smf002.go` | `smf002`, `smf003` (standard header only) |
 | 4 (step termination) | `smf004.go` | `smf004`, `smf004_dev` |
 | 5 (job termination) | `smf005.go` | `smf005` |
 | 6 (output writer) | `smf006.go` | `smf006` (common header, every writer), `smf006_ipw` (IP PrintWay sections only, `SMF6SBS` = 9) |
@@ -158,6 +159,8 @@ Type 90: the header has no subtype field (offset 18 is reserved); the subtype is
 Type 32: the header triplets start at manual offset 24 (`rec[20]`), not 28 as in RMF records. Command sections of subtypes 1 and 2 are name + count (`***OTHER` groups commands not in the TSO/E accounting table); subtypes 3 and 4 (DETAIL, with CPU and I/O per command) are not decoded (no sample data).
 
 Type 33: the conversation ID section locates the partner/local TP name and LUWID sections by offsets from the start of the record (RDW included, so `rec` index = offset − 4); each is a 2-byte length followed by the data. `SMF33RSD` is documented as binary but is a packed date. The two sample records are the two sides of one conversation, so `SMF33CDS`/`SMF33CDR` (HFP byte counts) mirror each other. Not decoded (no sample data): subtype 1, user data field section.
+
+Types 2 and 3: the sample records (one of each per file) are 14-byte standard headers (flag bit 1 off), written when the dump started and ended, after the last dumped record. Type 2 subtypes 1 and 2 (signature records) are not decoded: no sample data.
 
 Type 20: laid out like type 5; `SMF20RLO` is an offset from the flag byte (`rec[0]`), as in type 4. The only sample record (in `data/smfdata`) has no accounting fields; its reader time, RACF user and group match the type 30 records of the same job.
 

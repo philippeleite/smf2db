@@ -20,6 +20,8 @@ var err error
 var version = "0.1.0"
 
 var parseTable = map[int]func([]byte){
+	2:   smf002Parse,
+	3:   smf003Parse,
 	4:   smf004Parse,
 	5:   smf005Parse,
 	6:   smf006Parse,
