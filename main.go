@@ -17,7 +17,7 @@ import (
 
 var db *sql.DB
 var err error
-var version = "0.2.0"
+var version = "0.2.1"
 
 var parseTable = map[int]func([]byte){
 	2:   smf002Parse,
